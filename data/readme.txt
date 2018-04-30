@@ -1,0 +1,1 @@
+download dataset from http://www.da.inf.ethz.ch/teaching/2018/CIL/material/exercise/twitter-datasets.zip and add content to folder
