@@ -99,3 +99,11 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Apple general
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Project specific
+/data
