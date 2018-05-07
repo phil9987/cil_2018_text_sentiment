@@ -13,7 +13,8 @@ TRAINING_DATA_POS = '../data/train_pos_full.txt'    # Path to positive training 
 TRAINING_DATA_NEG = '../data/train_neg_full.txt'    # Path to negative training data
 TEST_DATA = '../data/test_data.txt'                 # Path to test data (no labels, for submission)
 VERBOSE = False                                     # Want lots of info on terminal?
-MAX_DEPTH = 20                                      # Max-depth for RandomForest Classifier
+MAX_DEPTH = None                                    # Max-depth for RandomForest Classifier
+N_ESTIMATORS = 20
 
 def load_embeddings():
     '''
@@ -96,12 +97,12 @@ def generate_submission(labels, filename):
 def main():
     ''' main entry point of application '''
 
-    timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H%M%S')
     word2idx, embeddings = load_embeddings()
     X, y = load_trainingdata(word2idx, embeddings)
     pickle.dump( word2idx, open('word2idx_{}.pkl'.format(timestamp), 'wb'))
     pickle.dump( embeddings, open('embeddings_{}.pkl'.format(timestamp), 'wb'))
-    clf = RandomForestClassifier(max_depth=MAX_DEPTH, random_state=0)
+    clf = RandomForestClassifier(max_depth=MAX_DEPTH, n_estimators=N_ESTIMATORS, random_state=0, n_jobs=-1)
     scores = cross_val_score(clf, X, y, cv=5)                   # calculate cross validation score using 5 splits
     print('cross validation scores calculated ({}-dimensional embeddings, max_depth={})'.format(DIM, MAX_DEPTH))
     print(scores)
