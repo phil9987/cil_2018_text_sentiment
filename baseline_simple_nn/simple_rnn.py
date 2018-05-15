@@ -37,7 +37,7 @@ EVALUATE = True
 PREDICT = True
 
 BATCH_SIZE = 64
-EPOCHS = 5
+EPOCHS = 10
 
 if QUICKTEST:
     DIM = 25       # Dimension of embeddings. Possible choices: 25, 50, 100, 200
