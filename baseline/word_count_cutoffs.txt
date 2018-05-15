@@ -1,0 +1,8 @@
+Cutoff 20 missing in training : for length 756078, 30.24312 %, for known words 428667, 17.14668 %
+Cutoff 20 missing in test : for length 2934, 29.34 %, for known words 1365, 13.65 %
+
+Cutoff 30 missing in training : for length 46736, 1.86944 %, for known words 13171, 0.52684 %
+Cutoff 30 missing in test : for length 165, 1.65 %, for known words 19, 0.19 %
+
+Cutoff 40 missing in training : for length 1038, 0.04152 %, for known words 459, 0.01836 %
+Cutoff 40 missing in test : for length 1, 0.01 %, for known words 0, 0.0 %
