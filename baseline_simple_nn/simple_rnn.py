@@ -5,12 +5,14 @@ but into a word_count x 200d matrix.
 
 import and embedding functions from baseline.
 
+v2.0 embedding modified to use less memory
+
 Tweet size is limited to 40 words. See generated stats by Philip
 1359372 out of 1360000 tweets are <= 40 words: 99.95382352941176%
 and in test data set, only 1 of 10'000 tweets > 40 words
 5931,loool " <user> finished all the red bull . still no wings \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 <url>
 
-v1.0 2018-05-15 Pirmin Schmid
+v2.0 2018-05-15 Pirmin Schmid
 """
 
 import datetime
@@ -26,7 +28,7 @@ import tensorflow as tf
 QUICKTEST = False
 VERBOSE = False
 
-MODEL_NAME = 'v1'
+MODEL_NAME = 'v2'
 
 IGNORE_UNKNOWN_WORDS = True
 HIDDEN_STATE_SIZE = 512
@@ -45,6 +47,7 @@ if QUICKTEST:
     TRAINING_DATA_NEG = '../data/train_neg.txt'    # Path to negative training data
     MAX_TWEET_SIZE = 20
     HIDDEN_STATE_SIZE = int(HIDDEN_STATE_SIZE / 4)
+    EPOCHS = 3
 else:
     DIM = 200  # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = '../data/train_pos_full.txt'  # Path to positive training data
@@ -59,8 +62,11 @@ MODEL_NAME += '_size' + str(MAX_TWEET_SIZE)
 MODEL_NAME += '_dim' + str(DIM)
 MODEL_NAME += '_state' + str(HIDDEN_STATE_SIZE)
 MODEL_NAME += '_unknowns_ignored' if IGNORE_UNKNOWN_WORDS else '_with_unknowns'
+MODEL_NAME += '_quicktest' if QUICKTEST else ''
 
 MODEL_DIR = os.path.join(BASE_DIR, MODEL_NAME)
+
+PAD = '<<pad>>'
 
 
 # --- helpers --------------------------------------------------------------------------------------
@@ -97,91 +103,108 @@ def load_embeddings():
     weights = []
 
     with open('../data/glove.twitter.27B/glove.twitter.27B.{}d.txt'.format(DIM), 'r') as file:
-        for index, line in enumerate(file):
+        index = 0
+        for line in file:
             values = line.split()  # word and weights are separated by space
             word = values[0]  # word is first element on each line
-            word_weights = np.asarray(values[1:], dtype=np.float32)  # weights for current word
+            word_weights = values[1:]
+            if len(word_weights) != DIM:
+                print('wrong encoding length {} for ""; word ignored'.format(len(word_weights), word))
+                continue
+
             word2idx[word] = index
             weights.append(word_weights)
+            index += 1
 
     return word2idx, weights
 
 
-def tweet_embedding(tweet, word2idx, embeddings, is_training):
+def extend_embeddings(word2idx, weights):
+    '''Add some customized embeddings'''
+    pad = [0.0] * DIM
+    word2idx[PAD] = len(weights)
+    weights.append(pad)
+    return word2idx, weights
+
+
+def tweet_encoding(tweet, word2idx, is_training):
     '''
-        Returns tweet embedding by [MAX_TWEET_SIZE x word_embedding (DIM)]
-        unknown words are either ignored or returned as 0 vector
+        Returns tweet encoding by [MAX_TWEET_SIZE] integers
+        unknown words are either ignored or returned as encoding for <<pad>>
+
         Tweets longer than MAX_TWEET_SIZE
         - during training: return None, 0 and must be ignored
         - for evaluation/test sets: return truncated data up to MAX_TWEET_SIZE
-    '''
-    vec_list = []
-    tokens = tweet.split()  # split tweet by whitespaces
-    pad = [0.0] * DIM
 
+        note: the actual encoding is a lookup in tensorflow to save memory
+    '''
+    word_list = []
+    pad = word2idx[PAD]
+    tokens = tweet.split()  # split tweet by whitespaces
     for word in tokens:
-        try:
-            i = word2idx[word]
-            vec_list.append(embeddings[i])
-        except KeyError:
+        i = word2idx.get(word, None)
+        if i is None:
             if VERBOSE:
-                print('Warning: ignoring {} as it is not in vocabulary...'.format(word))
+                print('Warning: {} is not in vocabulary...'.format(word))
 
             if not IGNORE_UNKNOWN_WORDS:
-                vec_list.append(pad)
-            pass
+                word_list.append(pad)
+            continue
 
-    words = len(vec_list)
+        word_list.append(i)
+
+    words = len(word_list)
     if words > MAX_TWEET_SIZE:
         if is_training:
             return None, 0
         else:
-            return vec_list[:MAX_TWEET_SIZE], MAX_TWEET_SIZE
+            return word_list[:MAX_TWEET_SIZE], MAX_TWEET_SIZE
 
     padding = MAX_TWEET_SIZE - words
     if padding > 0:
         pads = [pad] * padding
-        vec_list.extend(pads)
+        word_list.extend(pads)
 
-    return vec_list, words
+    return word_list, words
 
 
-def load_trainingdata(word2idx, embeddings):
-    ''' Loads and returns training data embeddings X and correct labels y in a randomized order
-        note: each data embedding is a matrix [MAX_TWEET_SIZE x word_embedding (DIM)]
+def load_trainingdata(word2idx):
+    ''' Loads and returns training data encoding X and correct labels y in a shuffled order
+        note: each data encoding is a vector [MAX_TWEET_SIZE] of integers
+        actual embedding happens inside of the tensorflow model
     '''
 
     train = []
     train_counts = []
     for tweet in open(TRAINING_DATA_POS, 'r', encoding='utf8'):
-        embedding, count = tweet_embedding(tweet, word2idx, embeddings, True)
+        encoding, count = tweet_encoding(tweet, word2idx, True)
         if count == 0:
             continue
-        train.append((embedding, classification_to_tf_label(1)))
+        train.append((encoding, classification_to_tf_label(1)))
         train_counts.append(count)
 
     for tweet in open(TRAINING_DATA_NEG, 'r', encoding='utf8'):
-        embedding, count = tweet_embedding(tweet, word2idx, embeddings, True)
+        encoding, count = tweet_encoding(tweet, word2idx, True)
         if count == 0:
             continue
-        train.append((embedding, classification_to_tf_label(-1)))
+        train.append((encoding, classification_to_tf_label(-1)))
         train_counts.append(count)
 
     random.shuffle(train)  # shuffle order of training data randomly
     X, y = zip(*train)
-    return np.asarray(X, dtype=np.float32), np.asarray(y), np.asarray(train_counts)
+    return np.asarray(X), np.asarray(y), np.asarray(train_counts)
 
 
-def load_testdata(word2idx, embeddings):
-    ''' Loads and returns test data as a matrix of [words x embeddings] '''
+def load_testdata(word2idx):
+    ''' Loads and returns test data as a vector of [words] integers'''
 
     test = []
     test_counts = []
     for line in open(TEST_DATA, 'r', encoding='utf8'):
         split_idx = line.find(',')  # first occurrence of ',' is separator between id and tweet
         tweet = line[(split_idx + 1):]
-        embedding, count = tweet_embedding(tweet, word2idx, embeddings, False)
-        test.append(embedding)
+        encoding, count = tweet_encoding(tweet, word2idx, False)
+        test.append(encoding)
         test_counts.append(count)
 
     # due to a bug reported in tensorflow ConcatOp : Dimensions of inputs should match
@@ -196,7 +219,7 @@ def load_testdata(word2idx, embeddings):
         test.extend(pad_data)
         test_counts.extend(pad_counts)
 
-    return np.asarray(test, dtype=np.float32), np.asarray(test_counts), actual_count
+    return np.asarray(test), np.asarray(test_counts), actual_count
 
 
 def generate_submission(predictions, actual_count, filename):
@@ -213,8 +236,8 @@ def generate_submission(predictions, actual_count, filename):
 
 # --- RNN language model ---------------------------------------------------------------------------
 def lang_model_fn(features, labels, mode, params):
-    # inputs and labels
-    batch_size_live = tf.shape(features['x'])[0]
+    # lookup table for the embeddings
+    embeddings = tf.constant(params['embeddings'], dtype=tf.float32)
 
     # words: shape [batch_size, MAX_TWEET_SIZE, DIM]
     # lengths: shape [batch_size, 1]
@@ -222,12 +245,14 @@ def lang_model_fn(features, labels, mode, params):
     words = features['x']
     lengths = features['length']
 
+    embedded_words = tf.nn.embedding_lookup(embeddings, words)
+
     # outputs: shape [batch_size, MAX_TWEET_SIZE, HIDDEN_STATE_SIZE]
     # final_state: shape [batch_size, HIDDEN_STATE_SIZE]
     rnn_cell = tf.nn.rnn_cell.BasicRNNCell(HIDDEN_STATE_SIZE)
     initial_state = rnn_cell.zero_state(BATCH_SIZE, dtype=tf.float32)
     rnn_outputs, final_state = tf.nn.dynamic_rnn(cell=rnn_cell,
-                                                 inputs=words,
+                                                 inputs=embedded_words,
                                                  time_major=False,
                                                  sequence_length=lengths,
                                                  initial_state=initial_state,
@@ -281,9 +306,11 @@ def main():
     tf.logging.set_verbosity(tf.logging.INFO)
     timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H%M%S')
     word2idx, embeddings = load_embeddings()
+    word2idx, embeddings = extend_embeddings(word2idx, embeddings)
+    embeddings = np.asarray(embeddings, dtype=np.float32)
 
     if TRAIN or EVALUATE:
-        X, y, X_lengths = load_trainingdata(word2idx, embeddings)
+        X, y, X_lengths = load_trainingdata(word2idx)
         n = len(X_lengths)
         #pickle.dump(word2idx, open('word2idx_{}.pkl'.format(timestamp), 'wb'))
         #pickle.dump(embeddings, open('embeddings_{}.pkl'.format(timestamp), 'wb'))
@@ -300,16 +327,16 @@ def main():
         evaluate_balance('evaluation', y_eval)
 
     if PREDICT:
-        X_test, X_lengths_test, actual_test_count = load_testdata(word2idx, embeddings)
+        X_test, X_lengths_test, actual_test_count = load_testdata(word2idx)
         X_test = np.asarray(X_test)
 
     # create estimator
-    hyper_params = {}
+    params = {'embeddings': embeddings}
 
     sentiment_predictor = tf.estimator.Estimator(
         model_fn=lang_model_fn,
         model_dir=MODEL_DIR,
-        params=hyper_params)
+        params=params)
 
     if TRAIN:
         print("Training: Model", MODEL_NAME)
