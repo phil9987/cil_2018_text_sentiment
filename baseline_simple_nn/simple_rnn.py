@@ -49,10 +49,10 @@ if QUICKTEST:
     HIDDEN_STATE_SIZE = 128  # int(HIDDEN_STATE_SIZE / 4)
     EPOCHS = 3
 else:
-    DIM = 200  # Dimension of embeddings. Possible choices: 25, 50, 100, 200
+    DIM = 25  # 200  # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = '../data/train_pos_full.txt'  # Path to positive training data
     TRAINING_DATA_NEG = '../data/train_neg_full.txt'  # Path to negative training data
-    MAX_TWEET_SIZE = 20
+    MAX_TWEET_SIZE = 30
 
 TEST_DATA = '../data/test_data.txt'                 # Path to test data (no labels, for submission)
 
