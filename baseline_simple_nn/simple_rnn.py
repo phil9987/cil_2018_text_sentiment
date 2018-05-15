@@ -31,7 +31,7 @@ VERBOSE = False
 MODEL_NAME = 'v2'
 
 IGNORE_UNKNOWN_WORDS = True
-HIDDEN_STATE_SIZE = 512
+HIDDEN_STATE_SIZE = 128  # 512
 SENTIMENTS = 2
 
 TRAIN = True
@@ -39,20 +39,20 @@ EVALUATE = True
 PREDICT = True
 
 BATCH_SIZE = 64
-EPOCHS = 10
+EPOCHS = 5
 
 if QUICKTEST:
     DIM = 25       # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = '../data/train_pos.txt'    # Path to positive training data
     TRAINING_DATA_NEG = '../data/train_neg.txt'    # Path to negative training data
     MAX_TWEET_SIZE = 20
-    HIDDEN_STATE_SIZE = int(HIDDEN_STATE_SIZE / 4)
+    HIDDEN_STATE_SIZE = 128  # int(HIDDEN_STATE_SIZE / 4)
     EPOCHS = 3
 else:
     DIM = 200  # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = '../data/train_pos_full.txt'  # Path to positive training data
     TRAINING_DATA_NEG = '../data/train_neg_full.txt'  # Path to negative training data
-    MAX_TWEET_SIZE = 40
+    MAX_TWEET_SIZE = 20
 
 TEST_DATA = '../data/test_data.txt'                 # Path to test data (no labels, for submission)
 
