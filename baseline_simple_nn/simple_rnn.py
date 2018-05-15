@@ -170,7 +170,7 @@ def tweet_encoding(tweet, word2idx, is_training):
 
 def load_trainingdata(word2idx):
     ''' Loads and returns training data encoding X and correct labels y in a shuffled order
-        note: each data encoding is a vector [MAX_TWEET_SIZE] of integers
+        note: each tweet is a vector [MAX_TWEET_SIZE] of integers
         actual embedding happens inside of the tensorflow model
     '''
 
@@ -196,7 +196,7 @@ def load_trainingdata(word2idx):
 
 
 def load_testdata(word2idx):
-    ''' Loads and returns test data as a vector of [words] integers'''
+    ''' Loads and returns test data. each tweet is a vector of [MAX_TWEET_SIZE] integers'''
 
     test = []
     test_counts = []
@@ -207,8 +207,9 @@ def load_testdata(word2idx):
         test.append(encoding)
         test_counts.append(count)
 
-    # due to a bug reported in tensorflow ConcatOp : Dimensions of inputs should match
     # the test data is padded to align with BATCH_SIZE
+    # due to a bug reported in "tensorflow ConcatOp : Dimensions of inputs should match"
+    # actual_count is used to limit output of the results
     actual_count = len(test_counts)
 
     rem = actual_count % BATCH_SIZE
@@ -236,19 +237,20 @@ def generate_submission(predictions, actual_count, filename):
 
 # --- RNN language model ---------------------------------------------------------------------------
 def lang_model_fn(features, labels, mode, params):
-    # lookup table for the embeddings
+    # lookup table for the embeddings: shape [n_embeddings, DIM]
     embeddings = tf.constant(params['embeddings'], dtype=tf.float32)
 
-    # words: shape [batch_size, MAX_TWEET_SIZE, DIM]
-    # lengths: shape [batch_size, 1]
-    # labels: shape [batch_size, SENTIMENTS]
+    # words: shape [BATCH_SIZE, MAX_TWEET_SIZE]
+    # lengths: shape [BATCH_SIZE]
+    # labels: shape [BATCH_SIZE]
     words = features['x']
     lengths = features['length']
 
+    # shape [BATCH_SIZE, MAX_TWEET_SIZE, DIM]
     embedded_words = tf.nn.embedding_lookup(embeddings, words)
 
-    # outputs: shape [batch_size, MAX_TWEET_SIZE, HIDDEN_STATE_SIZE]
-    # final_state: shape [batch_size, HIDDEN_STATE_SIZE]
+    # rnn_outputs: shape [BATCH_SIZE, MAX_TWEET_SIZE, HIDDEN_STATE_SIZE]
+    # final_state: shape [BATCH_SIZE, HIDDEN_STATE_SIZE]
     rnn_cell = tf.nn.rnn_cell.BasicRNNCell(HIDDEN_STATE_SIZE)
     initial_state = rnn_cell.zero_state(BATCH_SIZE, dtype=tf.float32)
     rnn_outputs, final_state = tf.nn.dynamic_rnn(cell=rnn_cell,
@@ -261,12 +263,13 @@ def lang_model_fn(features, labels, mode, params):
     # currently a one layer step from this collected output state to the 2 labels
     # can be extended to a deeper NN, of course
 
-    # shape [batch_size, MAX_TWEET_SIZE * HIDDEN_STATE_SIZE]
+    # shape [BATCH_SIZE, MAX_TWEET_SIZE * HIDDEN_STATE_SIZE]
     flattened = tf.layers.flatten(inputs=rnn_outputs, name="flatten")
 
-    # shape [batch_size, SENTIMENTS]
+    # shape [BATCH_SIZE, SENTIMENTS]
     logits = tf.contrib.layers.fully_connected(inputs=flattened, num_outputs=SENTIMENTS)
 
+    # shape: [BATCH_SIZE]
     sentiment_prediction = tf.argmax(logits, axis=1)
 
     # predict
