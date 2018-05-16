@@ -6,13 +6,15 @@ but into a word_count x 200d matrix.
 import and embedding functions from baseline.
 
 v2.0 embedding modified to use less memory
+v2.1 testing with final hidden state only (not successful)
+v3.0 stacked RNN (rather conventional technique)
 
 Tweet size is limited to 40 words. See generated stats by Philip
 1359372 out of 1360000 tweets are <= 40 words: 99.95382352941176%
 and in test data set, only 1 of 10'000 tweets > 40 words
 5931,loool " <user> finished all the red bull . still no wings \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 <url>
 
-v2.0 2018-05-15 Pirmin Schmid
+v3.0 2018-05-16 Pirmin Schmid
 """
 
 import datetime
@@ -28,28 +30,33 @@ import tensorflow as tf
 QUICKTEST = False
 VERBOSE = False
 
-MODEL_NAME = 'v2'
+MODEL_NAME = 'v3'
 
 IGNORE_UNKNOWN_WORDS = True
-HIDDEN_STATE_SIZE = 128  # 512
+HIDDEN_STATE_SIZE = 512
 SENTIMENTS = 2
+RNN_STACK_DEPTH = 2
+DROPOUT = False
+
+LEARNING_RATE = 1e-4
+GRADIENT_CLIP = 10
 
 TRAIN = True
 EVALUATE = True
 PREDICT = True
 
 BATCH_SIZE = 64
-EPOCHS = 5
+EPOCHS = 10
 
 if QUICKTEST:
-    DIM = 25       # Dimension of embeddings. Possible choices: 25, 50, 100, 200
+    DIM = 25        # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = '../data/train_pos.txt'    # Path to positive training data
     TRAINING_DATA_NEG = '../data/train_neg.txt'    # Path to negative training data
-    MAX_TWEET_SIZE = 20
-    HIDDEN_STATE_SIZE = 128  # int(HIDDEN_STATE_SIZE / 4)
-    EPOCHS = 3
+    MAX_TWEET_SIZE = 30
+    HIDDEN_STATE_SIZE = int(HIDDEN_STATE_SIZE / 4)
+    EPOCHS = 5
 else:
-    DIM = 25  # 200  # Dimension of embeddings. Possible choices: 25, 50, 100, 200
+    DIM = 200       # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = '../data/train_pos_full.txt'  # Path to positive training data
     TRAINING_DATA_NEG = '../data/train_neg_full.txt'  # Path to negative training data
     MAX_TWEET_SIZE = 30
@@ -58,6 +65,8 @@ TEST_DATA = '../data/test_data.txt'                 # Path to test data (no labe
 
 BASE_DIR = './model_checkpoints'
 
+MODEL_NAME += '_stack' + str(RNN_STACK_DEPTH)
+MODEL_NAME += '_dropout' if DROPOUT else ''
 MODEL_NAME += '_size' + str(MAX_TWEET_SIZE)
 MODEL_NAME += '_dim' + str(DIM)
 MODEL_NAME += '_state' + str(HIDDEN_STATE_SIZE)
@@ -236,6 +245,13 @@ def generate_submission(predictions, actual_count, filename):
 
 
 # --- RNN language model ---------------------------------------------------------------------------
+def rnn_cell():
+    cell = tf.contrib.rnn.GRUCell(HIDDEN_STATE_SIZE)
+    if DROPOUT:
+        cell = tf.contrib.rnn.DropoutWrapper(rnn_cell, output_keep_prob=0.9)
+    return cell
+
+
 def lang_model_fn(features, labels, mode, params):
     # lookup table for the embeddings: shape [n_embeddings, DIM]
     embeddings = tf.constant(params['embeddings'], dtype=tf.float32)
@@ -251,9 +267,9 @@ def lang_model_fn(features, labels, mode, params):
 
     # rnn_outputs: shape [BATCH_SIZE, MAX_TWEET_SIZE, HIDDEN_STATE_SIZE]
     # final_state: shape [BATCH_SIZE, HIDDEN_STATE_SIZE]
-    rnn_cell = tf.nn.rnn_cell.BasicRNNCell(HIDDEN_STATE_SIZE)
-    initial_state = rnn_cell.zero_state(BATCH_SIZE, dtype=tf.float32)
-    rnn_outputs, final_state = tf.nn.dynamic_rnn(cell=rnn_cell,
+    stacked_rnn_cell = tf.contrib.rnn.MultiRNNCell([rnn_cell() for _ in range(RNN_STACK_DEPTH)])
+    initial_state = stacked_rnn_cell.zero_state(BATCH_SIZE, dtype=tf.float32)
+    rnn_outputs, final_state = tf.nn.dynamic_rnn(cell=stacked_rnn_cell,
                                                  inputs=embedded_words,
                                                  time_major=False,
                                                  sequence_length=lengths,
@@ -267,7 +283,7 @@ def lang_model_fn(features, labels, mode, params):
     flattened = tf.layers.flatten(inputs=rnn_outputs, name="flatten")
 
     # shape [BATCH_SIZE, SENTIMENTS]
-    logits = tf.contrib.layers.fully_connected(inputs=flattened, num_outputs=SENTIMENTS)
+    logits = tf.contrib.layers.fully_connected(inputs=flattened, num_outputs=SENTIMENTS, activation_fn=tf.sigmoid)
 
     # shape: [BATCH_SIZE]
     sentiment_prediction = tf.argmax(logits, axis=1)
@@ -281,18 +297,26 @@ def lang_model_fn(features, labels, mode, params):
 
     # use identical loss function for training and eval
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits)
+    #loss = tf.losses.mean_squared_error(labels, sentiment_prediction)
     batch_loss = tf.reduce_mean(loss)
 
     # train
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.train.AdamOptimizer()
+        optimizer = tf.train.AdamOptimizer(LEARNING_RATE)
 
-        grad_val_pairs = optimizer.compute_gradients(batch_loss)
-        gradients, values = zip(*grad_val_pairs)
-        clipped_gradients, _ = tf.clip_by_global_norm(gradients, 5)
-        train_op = optimizer.apply_gradients(
-            zip(clipped_gradients, values),
-            global_step=tf.train.get_global_step())
+        vars = tf.trainable_variables()
+        gradients = tf.gradients(batch_loss, vars)
+        clipped_gradients, _ = tf.clip_by_global_norm(gradients, clip_norm=GRADIENT_CLIP)
+        train_op = optimizer.apply_gradients(zip(clipped_gradients, vars), global_step=tf.train.get_global_step())
+
+        #grad_val_pairs = optimizer.compute_gradients(batch_loss)
+        #gradients, values = zip(*grad_val_pairs)
+        #clipped_gradients, _ = tf.clip_by_global_norm(gradients, 5)
+        #train_op = optimizer.apply_gradients(
+        #    zip(clipped_gradients, values),
+        #    global_step=tf.train.get_global_step())
+
+        #train_op = optimizer.minimize(batch_loss, global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=batch_loss, train_op=train_op)
 
     # eval: accuracy
