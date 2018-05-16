@@ -77,6 +77,7 @@ MODEL_DIR = os.path.join(BASE_DIR, MODEL_NAME)
 
 PAD = '<<pad>>'
 
+run_config = tf.estimator.RunConfig(keep_checkpoint_max=1)
 
 # --- helpers --------------------------------------------------------------------------------------
 def classification_to_tf_label(classification):
@@ -363,6 +364,7 @@ def main():
     sentiment_predictor = tf.estimator.Estimator(
         model_fn=lang_model_fn,
         model_dir=MODEL_DIR,
+        config=run_config,
         params=params)
 
     if TRAIN:
