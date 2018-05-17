@@ -46,7 +46,7 @@ EVALUATE = True
 PREDICT = True
 
 BATCH_SIZE = 64
-EPOCHS = 4
+EPOCHS = 1
 
 if QUICKTEST:
     DIM = 25        # Dimension of embeddings. Possible choices: 25, 50, 100, 200
@@ -54,7 +54,7 @@ if QUICKTEST:
     TRAINING_DATA_NEG = '../data/train_neg.txt'    # Path to negative training data
     MAX_TWEET_SIZE = 30
     HIDDEN_STATE_SIZE = int(HIDDEN_STATE_SIZE / 4)
-    EPOCHS = 3
+    EPOCHS = 1
 else:
     DIM = 200       # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = '../data/train_pos_full.txt'  # Path to positive training data
