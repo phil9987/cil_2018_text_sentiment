@@ -8,13 +8,14 @@ import and embedding functions from baseline.
 v2.0 embedding modified to use less memory
 v2.1 testing with final hidden state only (not successful)
 v3.0 stacked RNN (rather conventional technique)
+v3.1 also test LSTM instead of GRU, also test drop
 
 Tweet size is limited to 40 words. See generated stats by Philip
 1359372 out of 1360000 tweets are <= 40 words: 99.95382352941176%
 and in test data set, only 1 of 10'000 tweets > 40 words
 5931,loool " <user> finished all the red bull . still no wings \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 <url>
 
-v3.0 2018-05-16 Pirmin Schmid
+v3.1 2018-05-22 Pirmin Schmid
 """
 
 import datetime
@@ -36,6 +37,7 @@ IGNORE_UNKNOWN_WORDS = True
 HIDDEN_STATE_SIZE = 384
 SENTIMENTS = 2
 RNN_STACK_DEPTH = 2
+GRU = False
 DROPOUT = False
 
 LEARNING_RATE = 1e-4
@@ -66,6 +68,7 @@ TEST_DATA = '../data/test_data.txt'                 # Path to test data (no labe
 BASE_DIR = './model_checkpoints'
 
 MODEL_NAME += '_stack' + str(RNN_STACK_DEPTH)
+MODEL_NAME += '_gru' if GRU else '_lstm'
 MODEL_NAME += '_dropout' if DROPOUT else ''
 MODEL_NAME += '_size' + str(MAX_TWEET_SIZE)
 MODEL_NAME += '_dim' + str(DIM)
@@ -78,6 +81,7 @@ MODEL_DIR = os.path.join(BASE_DIR, MODEL_NAME)
 PAD = '<<pad>>'
 
 run_config = tf.estimator.RunConfig(keep_checkpoint_max=1)
+
 
 # --- helpers --------------------------------------------------------------------------------------
 def classification_to_tf_label(classification):
@@ -247,9 +251,12 @@ def generate_submission(predictions, actual_count, filename):
 
 # --- RNN language model ---------------------------------------------------------------------------
 def rnn_cell():
-    cell = tf.contrib.rnn.GRUCell(HIDDEN_STATE_SIZE)
+    if GRU:
+        cell = tf.contrib.rnn.GRUCell(HIDDEN_STATE_SIZE)
+    else:
+        cell = tf.contrib.rnn.LSTMCell(HIDDEN_STATE_SIZE)
     if DROPOUT:
-        cell = tf.contrib.rnn.DropoutWrapper(rnn_cell, output_keep_prob=0.9)
+        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=0.8)
     return cell
 
 
