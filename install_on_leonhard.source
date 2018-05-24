@@ -1,0 +1,8 @@
+# installs modules and environment (tensorflow 1.6, gensim); needs to be sourced
+# can be used with the associated activate script
+module load python_gpu/3.6.1 cuda/9.0.176 cudnn/7.0
+pip3 install --user virtualenv
+virtualenv $HOME/env
+. $HOME/env/bin/activate
+pip3 install tensorflow-gpu==1.6
+pip3 install gensim

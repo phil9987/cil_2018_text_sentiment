@@ -1,3 +1,0 @@
-# initializes modules and environment (tensorflow 1.6 and gensim); needs to be sourced
-module load python_gpu/3.6.1 cuda/9.0.176 cudnn/7.0
-. $HOME/env/bin/activate
