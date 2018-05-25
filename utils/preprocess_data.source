@@ -1,0 +1,23 @@
+# Copies data files to orig folder and runs ruby preprocess script on them
+# This creates a new file for each data file.
+# Run this file from within the utils directory
+
+module load ruby
+cd ..
+cd data
+mkdir orig
+mv train_pos_full.txt orig/train_pos_full.txt
+mv train_pos.txt orig/train_pos.txt
+mv train_neg_full.txt orig/train_neg_full.txt
+mv train_neg.txt orig/train_neg.txt
+mv test_data.txt orig/test_data.txt
+
+ruby -n ../utils/glove_preprocess.rb orig/train_pos_full.txt > train_pos_full.txt
+ruby -n ../utils/glove_preprocess.rb orig/train_neg_full.txt > train_neg_full.txt
+ruby -n ../utils/glove_preprocess.rb orig/train_pos.txt > train_pos.txt
+ruby -n ../utils/glove_preprocess.rb orig/train_neg.txt > train_neg.txt
+ruby -n ../utils/glove_preprocess.rb orig/test_data.txt > test_data.txt
+
+# go back to original directory
+cd ..
+cd utils
