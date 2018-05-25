@@ -64,7 +64,7 @@ else:
 
 TEST_DATA = '../data/test_data.txt'                 # Path to test data (no labels, for submission)
 
-BASE_DIR = './model_checkpoints'
+BASE_DIR = '/cluster/scratch/junkerp/model_checkpoints' 
 
 MODEL_NAME += '_stack' + str(RNN_STACK_DEPTH)
 MODEL_NAME += '_gru' if GRU else '_lstm'
