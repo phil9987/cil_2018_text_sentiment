@@ -1,21 +1,18 @@
 """
-Simple RNN model using Tensorflow's estimator interface.
-In contrast to baseline, the sentences are not summarized into one e.g. 200d vector
-but into a word_count x 200d matrix.
+Our model:
 
-import and embedding functions from baseline.
+Currently:  Simple RNN model using Tensorflow's estimator interface.
+- constant embedding
+- stacked RNN (GRU or LSTM cells as basis), optional drop wrapper
+- Tweet size limited to 40 words; note: all unknown words are ignored
+  see stats:
+  1359372 out of 1360000 tweets are <= 40 words: 99.95382352941176%
+  and in test data set, only 1 of 10'000 tweets > 40 words
+  5931,loool " <user> finished all the red bull . still no wings \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 <url>
 
-v2.0 embedding modified to use less memory
-v2.1 testing with final hidden state only (not successful)
-v3.0 stacked RNN (rather conventional technique)
-v3.1 also test LSTM instead of GRU, also test drop
+TODO: extending to what works best
 
-Tweet size is limited to 40 words. See generated stats by Philip
-1359372 out of 1360000 tweets are <= 40 words: 99.95382352941176%
-and in test data set, only 1 of 10'000 tweets > 40 words
-5931,loool " <user> finished all the red bull . still no wings \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 <url>
-
-v3.1 2018-05-22 Pirmin Schmid
+v3.2 2018-05-25 Group The Optimists
 """
 
 import datetime
@@ -28,7 +25,7 @@ import time
 import tensorflow as tf
 
 # --- configuration --------------------------------------------------------------------------------
-QUICKTEST = True
+QUICKTEST = False
 VERBOSE = False
 
 MODEL_NAME = 'v3'
@@ -38,7 +35,8 @@ HIDDEN_STATE_SIZE = 384
 SENTIMENTS = 2
 RNN_STACK_DEPTH = 2
 GRU = False
-DROPOUT = False
+DROPOUT = True
+DROPOUT_KEEP_PROBABILITY = 0.7
 
 LEARNING_RATE = 1e-4
 GRADIENT_CLIP = 10
@@ -48,7 +46,8 @@ EVALUATE = True
 PREDICT = True
 
 BATCH_SIZE = 64
-EPOCHS = 1
+EPOCHS = 3
+EVALS_PER_EPOCH = 4
 
 if QUICKTEST:
     DIM = 25        # Dimension of embeddings. Possible choices: 25, 50, 100, 200
@@ -254,9 +253,9 @@ def rnn_cell():
     if GRU:
         cell = tf.contrib.rnn.GRUCell(HIDDEN_STATE_SIZE)
     else:
-        cell = tf.contrib.rnn.LSTMCell(HIDDEN_STATE_SIZE)
+        cell = tf.contrib.rnn.LSTMCell(HIDDEN_STATE_SIZE, forget_bias=1.0)
     if DROPOUT:
-        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=0.8)
+        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=DROPOUT_KEEP_PROBABILITY)
     return cell
 
 
@@ -390,14 +389,15 @@ def main():
             num_epochs=None,
             shuffle=False)
 
-        num_steps = int(n / BATCH_SIZE) + 1
+        num_steps = int(n / BATCH_SIZE / EVALS_PER_EPOCH) + 1
         for i in range(EPOCHS):
-            sentiment_predictor.train(
-                input_fn=train_input_fn,
-                steps=num_steps)
-            sentiment_predictor.evaluate(
-                input_fn=eval_input_fn,
-                steps=1)
+            for j in range(EVALS_PER_EPOCH):
+                sentiment_predictor.train(
+                    input_fn=train_input_fn,
+                    steps=num_steps)
+                sentiment_predictor.evaluate(
+                    input_fn=eval_input_fn,
+                    steps=1)
 
     if EVALUATE:
         print("Evaluation: Model", MODEL_NAME)
