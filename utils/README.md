@@ -1,4 +1,5 @@
 # Leonhard Cluster
+The cluster is especially useful for the training of the neural networks.
 login via ssh:
 ssh <user>@login.leonhard.ethz.ch
 
