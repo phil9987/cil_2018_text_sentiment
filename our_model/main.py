@@ -49,7 +49,11 @@ BATCH_SIZE = 64
 EPOCHS = 3
 EVALS_PER_EPOCH = 4
 
+BASE_DIR = '/model_checkpoints'
+
 if QUICKTEST:
+    BASE_DIR = '.' + BASE_DIR
+    KEEP_CHECKPOINT_MAX = 1
     DIM = 25        # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = '../data/train_pos.txt'    # Path to positive training data
     TRAINING_DATA_NEG = '../data/train_neg.txt'    # Path to negative training data
@@ -57,14 +61,15 @@ if QUICKTEST:
     HIDDEN_STATE_SIZE = int(HIDDEN_STATE_SIZE / 4)
     EPOCHS = 1
 else:
+    user = os.getenv('USER')
+    BASE_DIR = '/cluster/scratch/' + user + BASE_DIR
+    KEEP_CHECKPOINT_MAX = 5  # TF default
     DIM = 200       # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = '../data/train_pos_full.txt'  # Path to positive training data
     TRAINING_DATA_NEG = '../data/train_neg_full.txt'  # Path to negative training data
     MAX_TWEET_SIZE = 30
 
 TEST_DATA = '../data/test_data.txt'                 # Path to test data (no labels, for submission)
-
-BASE_DIR = '/cluster/scratch/junkerp/model_checkpoints' 
 
 MODEL_NAME += '_stack' + str(RNN_STACK_DEPTH)
 MODEL_NAME += '_gru' if GRU else '_lstm'
@@ -79,7 +84,7 @@ MODEL_DIR = os.path.join(BASE_DIR, MODEL_NAME)
 
 PAD = '<<pad>>'
 
-run_config = tf.estimator.RunConfig(keep_checkpoint_max=1)
+run_config = tf.estimator.RunConfig(keep_checkpoint_max=KEEP_CHECKPOINT_MAX)
 
 
 # --- helpers --------------------------------------------------------------------------------------
