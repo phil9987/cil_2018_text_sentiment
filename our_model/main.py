@@ -33,20 +33,20 @@ MODEL_NAME = 'v3'
 IGNORE_UNKNOWN_WORDS = True
 HIDDEN_STATE_SIZE = 384
 SENTIMENTS = 2
-RNN_STACK_DEPTH = 2
-GRU = False
-DROPOUT = True
+RNN_STACK_DEPTH = 3
+GRU = True
+DROPOUT = False
 DROPOUT_KEEP_PROBABILITY = 0.7
 
 LEARNING_RATE = 1e-4
-GRADIENT_CLIP = 10
+GRADIENT_CLIP = 5
 
 TRAIN = True
 EVALUATE = True
 PREDICT = True
 
 BATCH_SIZE = 64
-EPOCHS = 3
+EPOCHS = 2
 EVALS_PER_EPOCH = 4
 
 BASE_DIR = '/model_checkpoints'
@@ -309,26 +309,16 @@ def lang_model_fn(features, labels, mode, params):
 
     # use identical loss function for training and eval
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits)
-    #loss = tf.losses.mean_squared_error(labels, sentiment_prediction)
     batch_loss = tf.reduce_mean(loss)
 
     # train
     if mode == tf.estimator.ModeKeys.TRAIN:
         optimizer = tf.train.AdamOptimizer(LEARNING_RATE)
 
-        vars = tf.trainable_variables()
-        gradients = tf.gradients(batch_loss, vars)
+        variables = tf.trainable_variables()
+        gradients = tf.gradients(batch_loss, variables)
         clipped_gradients, _ = tf.clip_by_global_norm(gradients, clip_norm=GRADIENT_CLIP)
-        train_op = optimizer.apply_gradients(zip(clipped_gradients, vars), global_step=tf.train.get_global_step())
-
-        #grad_val_pairs = optimizer.compute_gradients(batch_loss)
-        #gradients, values = zip(*grad_val_pairs)
-        #clipped_gradients, _ = tf.clip_by_global_norm(gradients, 5)
-        #train_op = optimizer.apply_gradients(
-        #    zip(clipped_gradients, values),
-        #    global_step=tf.train.get_global_step())
-
-        #train_op = optimizer.minimize(batch_loss, global_step=tf.train.get_global_step())
+        train_op = optimizer.apply_gradients(zip(clipped_gradients, variables), global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=batch_loss, train_op=train_op)
 
     # eval: accuracy
@@ -351,8 +341,6 @@ def main():
     if TRAIN or EVALUATE:
         X, y, X_lengths = load_trainingdata(word2idx)
         n = len(X_lengths)
-        #pickle.dump(word2idx, open('word2idx_{}.pkl'.format(timestamp), 'wb'))
-        #pickle.dump(embeddings, open('embeddings_{}.pkl'.format(timestamp), 'wb'))
         eval_n = int(n / 50)  # use 2% of the data for evaluation
         train_n = n - eval_n
         X_train = X[:train_n]
@@ -385,7 +373,7 @@ def main():
             y=y_train,
             batch_size=BATCH_SIZE,
             num_epochs=None,
-            shuffle=False)  # already shuffled
+            shuffle=True)  # already shuffled; but still good to do more shuffling for more than 1 epoch
 
         eval_input_fn = tf.estimator.inputs.numpy_input_fn(
             x={"x": X_eval, "length": X_lengths_eval},
