@@ -218,9 +218,7 @@ def load_testdata(word2idx):
 
     test = []
     test_counts = []
-    for line in open(TEST_DATA, 'r', encoding='utf8'):
-        split_idx = line.find(',')  # first occurrence of ',' is separator between id and tweet
-        tweet = line[(split_idx + 1):]
+    for tweet in open(TEST_DATA, 'r', encoding='utf8'):
         encoding, count = tweet_encoding(tweet, word2idx, False)
         test.append(encoding)
         test_counts.append(count)
