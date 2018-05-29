@@ -6,6 +6,7 @@ from sklearn.model_selection import cross_val_score
 import pickle
 import time
 import datetime
+import operator
 
 ''' global configuration '''
 DIM = 200       # Dimension of embeddings. Possible choices: 25, 50, 100, 200
@@ -15,6 +16,7 @@ TEST_DATA = '../data/test_data.txt'                 # Path to test data (no labe
 VERBOSE = False                                     # Want lots of info on terminal?
 MAX_DEPTH = None                                    # Max-depth for RandomForest Classifier
 N_ESTIMATORS = 20
+UNKNOWN_WORDS = {}
 
 def load_embeddings():
     '''
@@ -37,6 +39,7 @@ def load_embeddings():
     return word2idx, weights
  
 def tweet_embedding(tweet, word2idx, embeddings):
+    global UNKNOWN_WORDS
     '''
         Returns tweet embedding by averaging embeddings of all contained words
         Words which are not contained in vocabulary are ignored
@@ -52,6 +55,7 @@ def tweet_embedding(tweet, word2idx, embeddings):
         except KeyError:
             # Ignore a word if it's not in vocabulary
             if VERBOSE:
+                UNKNOWN_WORDS[word] = UNKNOWN_WORDS.get(word, 0) + 1
                 print('Warning: ignoring {} as it is not in vocabulary...'.format(word))
             pass
 
@@ -64,44 +68,35 @@ def tweet_embedding(tweet, word2idx, embeddings):
 
 def load_trainingdata(word2idx, embeddings):
     ''' Loads and returns training data embeddings X and correct labels y in a randomized order '''
-
     train = []
     for tweet in open(TRAINING_DATA_POS, 'r', encoding='utf8'):
         train.append((tweet_embedding(tweet, word2idx, embeddings), 1))
 
     for tweet in open(TRAINING_DATA_NEG, 'r', encoding='utf8'):
         train.append((tweet_embedding(tweet, word2idx, embeddings), -1))
-    
     random.shuffle(train)       # shuffle order of training data randomly
     return zip(*train)          # return embeddings and labels as two separate vectors
 
 def load_testdata(word2idx, embeddings):
     ''' Loads and returns test data as a vector of embeddings '''
-
     test = []
-    for line in open(TEST_DATA, 'r', encoding='utf8'):
-        split_idx = line.find(',')  # first occurrence of ',' is separator between id and tweet
-        tweet = line[(split_idx + 1):]
+    for tweet in open(TEST_DATA, 'r', encoding='utf8'):
         test.append(tweet_embedding(tweet, word2idx, embeddings))
     return test
 
 def generate_submission(labels, filename):
     ''' Creates a submission file named according to filename in the current folder. '''
-
     with open(filename, 'w') as file:
         file.write('Id,Prediction\n')
         for i, label in enumerate(labels):
             file.write('{},{}\n'.format(i+1, label))
 
-
 def main():
     ''' main entry point of application '''
-
+    global UNKNOWN_WORDS
     timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H%M%S')
     word2idx, embeddings = load_embeddings()
     X, y = load_trainingdata(word2idx, embeddings)
-    pickle.dump( word2idx, open('word2idx_{}.pkl'.format(timestamp), 'wb'))
-    pickle.dump( embeddings, open('embeddings_{}.pkl'.format(timestamp), 'wb'))
     clf = RandomForestClassifier(max_depth=MAX_DEPTH, n_estimators=N_ESTIMATORS, random_state=0, n_jobs=-1)
     scores = cross_val_score(clf, X, y, cv=5)                   # calculate cross validation score using 5 splits
     print('cross validation scores calculated ({}-dimensional embeddings, max_depth={})'.format(DIM, MAX_DEPTH))
@@ -109,6 +104,11 @@ def main():
     clf.fit(X, y)                                               # train classifier on whole dataset
     pickle.dump( clf, open('random_forest_classifier_MaxDepth{}_DIM{}_{}'.format(MAX_DEPTH, DIM, timestamp) ,'wb'))   # store trained classifier
     testdata = load_testdata(word2idx, embeddings)
+    if VERBOSE:
+        print("total number of distinct unknown words: {}.".format(len(UNKNOWN_WORDS)))
+    with open("unkown_words.txt", 'w') as file:
+        for word in UNKNOWN_WORDS.keys():
+            print(word, file=file)
     submission_labels = clf.predict(testdata)                   # predict labels of test data
     generate_submission(submission_labels, 'submission_randomForest_MaxDepth{}_DIM{}_{}.csv'.format(MAX_DEPTH, DIM, timestamp))
 

@@ -3,6 +3,8 @@
 # Run this file from within the utils directory
 
 module load ruby
+module load python
+python remove_ids_of_testdata.py
 cd ..
 cd data
 mkdir orig
