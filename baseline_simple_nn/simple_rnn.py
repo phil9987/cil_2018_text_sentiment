@@ -123,7 +123,7 @@ def load_embeddings():
             word = values[0]  # word is first element on each line
             word_weights = values[1:]
             if len(word_weights) != DIM:
-                print('wrong encoding length {} for ""; word ignored'.format(len(word_weights), word))
+                print('wrong encoding length {} for {}; word ignored'.format(len(word_weights), word))
                 continue
 
             word2idx[word] = index
@@ -214,9 +214,7 @@ def load_testdata(word2idx):
 
     test = []
     test_counts = []
-    for line in open(TEST_DATA, 'r', encoding='utf8'):
-        split_idx = line.find(',')  # first occurrence of ',' is separator between id and tweet
-        tweet = line[(split_idx + 1):]
+    for tweet in open(TEST_DATA, 'r', encoding='utf8'):
         encoding, count = tweet_encoding(tweet, word2idx, False)
         test.append(encoding)
         test_counts.append(count)

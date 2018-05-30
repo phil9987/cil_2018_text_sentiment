@@ -11,6 +11,8 @@ download / transfer glove embeddings to leonhard
 useful scp commands (transfers local file to remote location):
 scp path/to/local/file <user>@login.leonhard.ethz.ch:path/to/remote/file
 
+. preprocess_data.source
+
 
 # Preparation (for each session)
 . activate_on_Leonhard.source
