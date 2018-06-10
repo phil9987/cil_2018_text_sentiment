@@ -37,6 +37,15 @@ Write intro...
 
 Write about related work \cite{go2016mastering}... I added one citation, else there is a latex error. @Ary here we can use the papers you found.
 
+\section{Baselines}
+- We use pretrained glove embeddings from Stanford.
+- We use the preprocessor script provided by Stanford (slightly adapted)
+- Words that are not in the vocabulary are ignored
+
+# Baseline1
+- A tweet is represented as the mean of all of its word embedding vectors (to solve the problem that the word embedding can only be caluclated per word and the classifier can only classify one vector)
+- Random Forest classifier with unlimited max_depth and 20 estimators
+- achieved accuracy (online): 0.72
 
 
 \section{Evaluation}
