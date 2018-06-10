@@ -1,16 +1,18 @@
 """
+Sentiment NN baseline
+---------------------
+
 Simple RNN model using Tensorflow's estimator interface.
-In contrast to baseline, the sentences are not summarized into one e.g. 200d vector
+In contrast to Random Forest baseline, the sentences are not summarized into one e.g. 200d vector
 but into a word_count x 200d matrix.
 
-import and embedding functions from baseline.
-
+v1.0 initial model
 v2.0 embedding modified to use less memory
 v2.1 testing with final hidden state only (not successful)
 v3.0 stacked RNN (rather conventional technique)
-v3.1 also test LSTM instead of GRU, also test drop
+v3.1 no difference whether GRU or LSTM for this purpose here
 
-Tweet size is limited to 40 words. See generated stats by Philip
+Tweet size is limited to 40 words. See generated stats
 1359372 out of 1360000 tweets are <= 40 words: 99.95382352941176%
 and in test data set, only 1 of 10'000 tweets > 40 words
 5931,loool " <user> finished all the red bull . still no wings \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 \ 355 \ 240 \ 275 \ 355 \ 270 \ 255 <url>
@@ -37,8 +39,7 @@ IGNORE_UNKNOWN_WORDS = True
 HIDDEN_STATE_SIZE = 384
 SENTIMENTS = 2
 RNN_STACK_DEPTH = 2
-GRU = False
-DROPOUT = False
+GRU = True
 
 LEARNING_RATE = 1e-4
 GRADIENT_CLIP = 10
@@ -48,9 +49,13 @@ EVALUATE = True
 PREDICT = True
 
 BATCH_SIZE = 64
-EPOCHS = 1
+EPOCHS = 2
+
+BASE_DIR = '/model_checkpoints'
 
 if QUICKTEST:
+    BASE_DIR = '.' + BASE_DIR
+    KEEP_CHECKPOINT_MAX = 1
     DIM = 25        # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = '../data/train_pos.txt'    # Path to positive training data
     TRAINING_DATA_NEG = '../data/train_neg.txt'    # Path to negative training data
@@ -58,6 +63,9 @@ if QUICKTEST:
     HIDDEN_STATE_SIZE = int(HIDDEN_STATE_SIZE / 4)
     EPOCHS = 1
 else:
+    user = os.getenv('USER')
+    BASE_DIR = '/cluster/scratch/' + user + BASE_DIR
+    KEEP_CHECKPOINT_MAX = 5  # TF default
     DIM = 200       # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = '../data/train_pos_full.txt'  # Path to positive training data
     TRAINING_DATA_NEG = '../data/train_neg_full.txt'  # Path to negative training data
@@ -65,11 +73,8 @@ else:
 
 TEST_DATA = '../data/test_data.txt'                 # Path to test data (no labels, for submission)
 
-BASE_DIR = './model_checkpoints'
-
 MODEL_NAME += '_stack' + str(RNN_STACK_DEPTH)
 MODEL_NAME += '_gru' if GRU else '_lstm'
-MODEL_NAME += '_dropout' if DROPOUT else ''
 MODEL_NAME += '_size' + str(MAX_TWEET_SIZE)
 MODEL_NAME += '_dim' + str(DIM)
 MODEL_NAME += '_state' + str(HIDDEN_STATE_SIZE)
@@ -80,7 +85,7 @@ MODEL_DIR = os.path.join(BASE_DIR, MODEL_NAME)
 
 PAD = '<<pad>>'
 
-run_config = tf.estimator.RunConfig(keep_checkpoint_max=1)
+run_config = tf.estimator.RunConfig(keep_checkpoint_max=KEEP_CHECKPOINT_MAX)
 
 
 # --- helpers --------------------------------------------------------------------------------------
@@ -235,9 +240,10 @@ def load_testdata(word2idx):
     return np.asarray(test), np.asarray(test_counts), actual_count
 
 
-def generate_submission(predictions, actual_count, filename):
+def generate_submission(predictions, actual_count, filename, softmax_filename):
     ''' Creates a submission file named according to filename in the current folder. '''
 
+    softmax_values = []
     with open(filename, 'w') as file:
         file.write('Id,Prediction\n')
         for i, prediction in enumerate(predictions):
@@ -245,6 +251,12 @@ def generate_submission(predictions, actual_count, filename):
                 break
             # additional mapping back into the desired classification space
             file.write('{},{}\n'.format(i + 1, tf_label_to_classification(prediction)))
+            softmax_values.append(prediction['softmax'])
+
+    with open(softmax_filename, 'wb') as file:
+        pickle.dump(softmax_values, file)
+    print('softmax values')
+    print(str(softmax_values))
 
 
 # --- RNN language model ---------------------------------------------------------------------------
@@ -253,8 +265,6 @@ def rnn_cell():
         cell = tf.contrib.rnn.GRUCell(HIDDEN_STATE_SIZE)
     else:
         cell = tf.contrib.rnn.LSTMCell(HIDDEN_STATE_SIZE)
-    if DROPOUT:
-        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=0.8)
     return cell
 
 
@@ -297,13 +307,13 @@ def lang_model_fn(features, labels, mode, params):
     # predict
     if mode == tf.estimator.ModeKeys.PREDICT:
         predictions = {
-            "sentiment": sentiment_prediction
+            "sentiment": sentiment_prediction,
+            "softmax": tf.nn.softmax(logits, axis=1)
         }
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
     # use identical loss function for training and eval
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits)
-    #loss = tf.losses.mean_squared_error(labels, sentiment_prediction)
     batch_loss = tf.reduce_mean(loss)
 
     # train
@@ -314,15 +324,6 @@ def lang_model_fn(features, labels, mode, params):
         gradients = tf.gradients(batch_loss, vars)
         clipped_gradients, _ = tf.clip_by_global_norm(gradients, clip_norm=GRADIENT_CLIP)
         train_op = optimizer.apply_gradients(zip(clipped_gradients, vars), global_step=tf.train.get_global_step())
-
-        #grad_val_pairs = optimizer.compute_gradients(batch_loss)
-        #gradients, values = zip(*grad_val_pairs)
-        #clipped_gradients, _ = tf.clip_by_global_norm(gradients, 5)
-        #train_op = optimizer.apply_gradients(
-        #    zip(clipped_gradients, values),
-        #    global_step=tf.train.get_global_step())
-
-        #train_op = optimizer.minimize(batch_loss, global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=batch_loss, train_op=train_op)
 
     # eval: accuracy
@@ -345,8 +346,6 @@ def main():
     if TRAIN or EVALUATE:
         X, y, X_lengths = load_trainingdata(word2idx)
         n = len(X_lengths)
-        #pickle.dump(word2idx, open('word2idx_{}.pkl'.format(timestamp), 'wb'))
-        #pickle.dump(embeddings, open('embeddings_{}.pkl'.format(timestamp), 'wb'))
         eval_n = int(n / 50)  # use 2% of the data for evaluation
         train_n = n - eval_n
         X_train = X[:train_n]
@@ -422,7 +421,10 @@ def main():
         predictions = sentiment_predictor.predict(
             input_fn=predict_input_fn)
 
-        generate_submission(predictions, actual_test_count, 'submission_simple_rnn_{}_{}.csv'.format(MODEL_NAME, timestamp))
+        generate_submission(predictions,
+                            actual_test_count,
+                            'submission_simple_rnn_{}_{}.csv'.format(MODEL_NAME, timestamp),
+                            'softmax_values_simple_rnn_{}_{}.pickle'.format(MODEL_NAME, timestamp))
 
 
 if __name__ == '__main__':
