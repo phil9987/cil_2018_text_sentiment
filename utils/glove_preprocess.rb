@@ -20,6 +20,12 @@ def tokenize input
 		.gsub(/#{eyes}#{nose}[\/|l*]/, "<neutralface>")
 		.gsub(/<3/,"<heart>")
 		.gsub(/[-+]?[.\d]*[\d]+[:,.\d]*/, "<number>")
+    .gsub(/\) \) \)/, "<smile>")
+    .gsub(/\)\)\)/, "<smile>")
+    .gsub(/\) \)/, "<smile>")
+    .gsub(/\( \( \(/, "<sadface>")
+    .gsub(/\(\(\(/, "<sadface>")
+    .gsub(/\( \(/, "<sadface>")
 		.gsub(/#\S+/){ |hashtag| # Split hashtags on uppercase letters
 
 			hashtag_body = hashtag[1..-1]
