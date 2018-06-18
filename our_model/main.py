@@ -41,8 +41,8 @@ DROPOUT_KEEP_PROBABILITY = 0.7
 LEARNING_RATE = 1e-4
 GRADIENT_CLIP = 5
 
-TRAIN = True
-EVALUATE = True
+TRAIN = False
+EVALUATE = False
 PREDICT = True
 
 BATCH_SIZE = 64
@@ -115,9 +115,11 @@ def load_embeddings():
         Loads the pretrained glove twitter embeddings with DIM dimensions.
         Returns a vector of embeddings and a word->idx dictionary
         which returns the index of a word in the embeddings vector
+        it also returns a reverse vocabulary idx2word
     '''
 
     word2idx = {}  # dict to convert token to weight-idx
+    idx2word = {}  # reverse vocabulary
     weights = []
 
     with open('../data/glove.twitter.27B/glove.twitter.27B.{}d.txt'.format(DIM), 'r') as file:
@@ -131,18 +133,21 @@ def load_embeddings():
                 continue
 
             word2idx[word] = index
+            idx2word[index] = word
             weights.append(word_weights)
             index += 1
 
-    return word2idx, weights
+    return word2idx, idx2word, weights
 
 
-def extend_embeddings(word2idx, weights):
+def extend_embeddings(word2idx, idx2word, weights):
     '''Add some customized embeddings'''
     pad = [0.0] * DIM
-    word2idx[PAD] = len(weights)
+    pad_index = len(weights)
+    word2idx[PAD] = pad_index
+    idx2word[pad_index] = PAD
     weights.append(pad)
-    return word2idx, weights
+    return word2idx, idx2word, weights
 
 
 def tweet_encoding(tweet, word2idx, is_training):
@@ -251,6 +256,30 @@ def generate_submission(predictions, actual_count, filename):
             file.write('{},{}\n'.format(i + 1, tf_label_to_classification(prediction)))
 
 
+def write_eval_data(eval_data, eval_lengths, eval_labels, predictions, eval_count, idx2word, filename):
+    ''' Writes a .csv file for analysis of the eval data set. '''
+
+    with open(filename, 'w') as file:
+        file.write('Id\tPrediction\tExpected\tMatch\tText\n')
+        for i, prediction in enumerate(predictions):
+            if i >= eval_count:
+                break
+            # additional mapping back into the desired classification space
+            prediction = tf_label_to_classification(prediction)
+            expected = 1 if eval_labels[i] > 0 else -1
+            match = prediction == expected
+            text = ''
+            encoding = eval_data[i]
+            eval_length = eval_lengths[i]
+            for j, code in enumerate(encoding):
+                if j >= eval_length:
+                    break
+                text += idx2word[code] + ' '
+            file.write('{id}\t{prediction}\t{expected}\t{match}\t{text}\n'
+                       .format(id=i + 1, prediction=prediction,
+                               expected=expected, match=match, text=text))
+
+
 # --- RNN language model ---------------------------------------------------------------------------
 def rnn_cell():
     if GRU:
@@ -332,14 +361,19 @@ def main():
     ''' main entry point of application '''
     tf.logging.set_verbosity(tf.logging.INFO)
     timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H%M%S')
-    word2idx, embeddings = load_embeddings()
-    word2idx, embeddings = extend_embeddings(word2idx, embeddings)
+    word2idx, idx2word, embeddings = load_embeddings()
+    word2idx, idx2word, embeddings = extend_embeddings(word2idx, idx2word, embeddings)
     embeddings = np.asarray(embeddings, dtype=np.float32)
 
-    if TRAIN or EVALUATE:
+    if TRAIN or EVALUATE or PREDICT:
         X, y, X_lengths = load_trainingdata(word2idx)
         n = len(X_lengths)
-        eval_n = int(n / 50)  # use 2% of the data for evaluation
+        eval_n = int(n / 50)        # use 2% of the data for evaluation
+        rem = eval_n % BATCH_SIZE   # align to BATCH_SIZE
+        diff = 0
+        if rem != 0:
+            diff = BATCH_SIZE - rem
+        eval_n += diff
         train_n = n - eval_n
         X_train = X[:train_n]
         X_lengths_train = X_lengths[:train_n]
@@ -404,7 +438,7 @@ def main():
             steps=1)
 
     if PREDICT:
-        print("Prediction: Model", MODEL_NAME)
+        print("Prediction: Model", MODEL_NAME, "for test data and create submission file")
         # create predict function
         predict_input_fn = tf.estimator.inputs.numpy_input_fn(
             x={"x": X_test, "length": X_lengths_test},
@@ -415,7 +449,20 @@ def main():
         predictions = sentiment_predictor.predict(
             input_fn=predict_input_fn)
 
-        generate_submission(predictions, actual_test_count, 'submission_simple_rnn_{}_{}.csv'.format(MODEL_NAME, timestamp))
+        generate_submission(predictions, actual_test_count, 'submission_our_model_{}_{}.csv'.format(MODEL_NAME, timestamp))
+
+        print("Prediction: Model", MODEL_NAME, "for validation data (testing and debugging)")
+        # create predict function
+        predict_input_fn = tf.estimator.inputs.numpy_input_fn(
+            x={"x": X_eval, "length": X_lengths_eval},
+            batch_size=BATCH_SIZE,
+            num_epochs=1,
+            shuffle=False)
+
+        predictions = sentiment_predictor.predict(
+            input_fn=predict_input_fn)
+
+        write_eval_data(X_eval, X_lengths_eval, y_eval, predictions, eval_n, idx2word, 'eval_our_model_{}_{}.csv'.format(MODEL_NAME, timestamp))
 
 
 if __name__ == '__main__':
