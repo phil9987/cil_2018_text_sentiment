@@ -12,7 +12,7 @@ Currently:  Simple RNN model using Tensorflow's estimator interface.
 
 TODO: extending to what works best
 
-v3.2 2018-05-25 Group The Optimists
+v3.3 2018-06-18 Group The Optimists
 """
 
 import datetime
@@ -28,7 +28,7 @@ import tensorflow as tf
 QUICKTEST = False
 VERBOSE = False
 
-MODEL_NAME = 'v3'
+MODEL_NAME = 'v4'
 
 IGNORE_UNKNOWN_WORDS = True
 HIDDEN_STATE_SIZE = 384
@@ -41,8 +41,8 @@ DROPOUT_KEEP_PROBABILITY = 0.7
 LEARNING_RATE = 1e-4
 GRADIENT_CLIP = 5
 
-TRAIN = False
-EVALUATE = False
+TRAIN = True
+EVALUATE = True
 PREDICT = True
 
 BATCH_SIZE = 64
