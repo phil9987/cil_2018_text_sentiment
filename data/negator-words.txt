@@ -3,7 +3,14 @@
 ; v0.1 Pirmin Schmid
 no
 not
-isn't
-wasn't
-don't
+never
+cant
+can't
+couldnt
 couldn't
+isnt
+isn't
+wasnt
+wasn't
+dont
+don't
