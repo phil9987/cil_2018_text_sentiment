@@ -1,0 +1,3 @@
+This opinion lexicon comes from
+https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html#lexicon
+Prof. Bing Liu

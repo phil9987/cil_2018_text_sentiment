@@ -1,0 +1,2 @@
+from
+https://github.com/snigdhac/StoryComprehension_EMNLP/tree/master/Resources/subjectivity_clues_hltemnlp05_MPQA
