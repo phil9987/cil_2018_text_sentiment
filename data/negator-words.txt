@@ -1,0 +1,9 @@
+; a simple dictionary of words that may negate the sentiment
+; heavily incomplete at the moment
+; v0.1 Pirmin Schmid
+no
+not
+isn't
+wasn't
+don't
+couldn't

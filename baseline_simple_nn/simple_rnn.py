@@ -194,24 +194,21 @@ def load_trainingdata(word2idx):
     '''
 
     train = []
-    train_counts = []
     for tweet in open(TRAINING_DATA_POS, 'r', encoding='utf8'):
         encoding, count = tweet_encoding(tweet, word2idx, True)
         if count == 0:
             continue
-        train.append((encoding, classification_to_tf_label(1)))
-        train_counts.append(count)
+        train.append((encoding, count, classification_to_tf_label(1)))
 
     for tweet in open(TRAINING_DATA_NEG, 'r', encoding='utf8'):
         encoding, count = tweet_encoding(tweet, word2idx, True)
         if count == 0:
             continue
-        train.append((encoding, classification_to_tf_label(-1)))
-        train_counts.append(count)
+        train.append((encoding, count, classification_to_tf_label(-1)))
 
     random.shuffle(train)  # shuffle order of training data randomly
-    X, y = zip(*train)
-    return np.asarray(X), np.asarray(y), np.asarray(train_counts)
+    X, train_counts, y = zip(*train)
+    return np.asarray(X), np.asarray(train_counts), np.asarray(y)
 
 
 def load_testdata(word2idx):
@@ -344,7 +341,7 @@ def main():
     embeddings = np.asarray(embeddings, dtype=np.float32)
 
     if TRAIN or EVALUATE:
-        X, y, X_lengths = load_trainingdata(word2idx)
+        X, X_lengths, y = load_trainingdata(word2idx)
         n = len(X_lengths)
         eval_n = int(n / 50)  # use 2% of the data for evaluation
         train_n = n - eval_n
