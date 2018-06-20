@@ -1,0 +1,81 @@
+\documentclass[10pt,conference,compsocconf]{IEEEtran}
+
+%\usepackage{times}
+%\usepackage{balance}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{color}
+
+\newcommand{\todo}[1]{}
+\renewcommand{\todo}[1]{{\color{red} TODO: {#1}}}
+
+\begin{document}
+\title{CIL 2018: Text Sentiment Classification}
+
+\author{
+  Pirmin Schmid, Philip Junker, Nikolas Göbel, Aryaman Fasciati\\
+  The Optimists\\
+  Department of Computer Science, ETH Zurich, Switzerland
+}
+
+\maketitle
+
+\begin{abstract}
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+  eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+  minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+  aliquip ex ea commodo consequat. Duis aute irure dolor in
+  reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
+  culpa qui officia deserunt mollit anim id est laborum.
+\end{abstract}
+
+
+\section{Introduction}
+
+The goal of this project is to build a sentiment classifier
+that predicts whether a tweet text used to include a
+positive smiley :) or a negative smiley :(,
+based on the remaining text.
+
+Our first baseline uses random forests and achieved an accuracy of \todo{\%}.
+Our second baseline uses a Recurrent Neural Network (RNN) model with
+an accuracy of TODO\%.
+
+In a third model, we refined our second baseline, incorporating
+\todo{describe novel approach}, in a RNN-based approach.
+This model achieved \todo{\%} accuracy.
+
+
+
+\section{Related Work}
+Write about related work \cite{go2016mastering}
+
+
+
+\section{Models}
+
+\subsection{First Baseline (B1)}
+
+
+
+- We use pretrained GloVe \cite{glove} embeddings from Stanford.
+- We use the preprocessor script provided by Stanford (slightly adapted)
+- Words that are not in the vocabulary are ignored
+
+Baseline1
+- A tweet is represented as the mean of all of its word embedding vectors (to solve the problem that the word embedding can only be caluclated per word and the classifier can only classify one vector)
+- Random Forest classifier with unlimited max\_depth and 20 estimators
+- achieved accuracy (online): 0.72
+
+
+\subsection{Second Baseline (B2)}
+
+\section*{Acknowledgements}
+The authors wish to express their gratitude to the Euler and Leonhard
+clusters at ETH, whose unwavering computational effort this project
+could not have done without.
+
+\bibliographystyle{IEEEtran}
+\bibliography{TheOptimists-literature}
+\end{document}
