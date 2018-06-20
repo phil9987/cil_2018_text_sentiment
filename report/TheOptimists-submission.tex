@@ -38,7 +38,7 @@ that predicts whether a tweet text used to include a
 positive smiley :) or a negative smiley :(,
 based on the remaining text.
 
-Our first baseline uses random forests and achieved an accuracy of \todo{\%}.
+Our first baseline uses random forests and achieved an accuracy of 72\%.
 Our second baseline uses a Recurrent Neural Network (RNN) model with
 an accuracy of TODO\%.
 
@@ -47,26 +47,22 @@ In a third model, we refined our second baseline, incorporating
 This model achieved \todo{\%} accuracy.
 
 
-
 \section{Related Work}
 Write about related work \cite{go2016mastering}
-
 
 
 \section{Models}
 
 \subsection{First Baseline (B1)}
 
+Our first baseline uses a random forest model with unlimited max\_depth and 20 estimators.
+Each tweet is represented by the the average of its word embedding vectors.
+We used pretrained GloVe \cite{glove} embeddings from Stanford,
+together with a slightly adapted version of the preprocessor script
+provided by Stanford.
+Words that are not in the vocabulary are ignored.
 
-
-- We use pretrained GloVe \cite{glove} embeddings from Stanford.
-- We use the preprocessor script provided by Stanford (slightly adapted)
-- Words that are not in the vocabulary are ignored
-
-Baseline1
-- A tweet is represented as the mean of all of its word embedding vectors (to solve the problem that the word embedding can only be caluclated per word and the classifier can only classify one vector)
-- Random Forest classifier with unlimited max\_depth and 20 estimators
-- achieved accuracy (online): 0.72
+This model achieved an accuracy of 72\%.
 
 
 \subsection{Second Baseline (B2)}
