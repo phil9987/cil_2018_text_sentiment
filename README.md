@@ -77,11 +77,26 @@ bsub -B -N -n 4 -R "rusage[mem=16000,ngpus_excl_p=1]" python3 simple_rnn.py
 ## Baseline I: Random Forest Classifier
 
 The code for the random forest classification is contained in the
-`baseline/` repository.
+`baseline/` sub-directory. It can be run via `python baseline.py`. On
+the cluster, a job should be started as follows:
+
+``` shell
+module load python
+bsub -n 1 -R "rusage[mem=16384]" -W 3:59 "python baseline.py"
+```
+
+It's worth to have a look at the documentation of scikit learn, there
+are many parameters which can be explored:
+http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
 
 ## Baseline II: Recurrent Neural Network with LSTM
 
+The code for the recurrent neural net baseline is contained in the
+`baseline_simple_nn/` sub-directory.
+
 ## Our Model
-	
-Recurrent neural network with additions and tweaks to make it perform
-better.
+
+The code for our own model is contained in the `our_model/`
+sub-directory. Our approach combines a recurrent neural network with
+additions and tweaks to make it perform better. We utilize
+TensorFlow's estimator interface.
