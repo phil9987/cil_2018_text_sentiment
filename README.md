@@ -76,9 +76,12 @@ bsub -B -N -n 4 -R "rusage[mem=16000,ngpus_excl_p=1]" python3 simple_rnn.py
 
 ## Baseline I: Random Forest Classifier
 
+The code for the random forest classification is contained in the
+`baseline/` repository.
+
 ## Baseline II: Recurrent Neural Network with LSTM
 
 ## Our Model
-
+	
 Recurrent neural network with additions and tweaks to make it perform
 better.
