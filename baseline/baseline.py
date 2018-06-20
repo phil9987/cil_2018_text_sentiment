@@ -5,14 +5,15 @@ import datetime
 import operator
 import random
 import numpy as np
+import nltk.sentiment.util
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 
 ''' global configuration '''
 
 EMBEDDING_DIMENSIONS = 200 # one of {25 50 100 200}
-TRAINING_DATA_POS = '../data/train_pos_full.txt'
-TRAINING_DATA_NEG = '../data/train_neg_full.txt'
+TRAINING_DATA_POS = '../data/train_pos.txt'
+TRAINING_DATA_NEG = '../data/train_neg.txt'
 TEST_DATA = '../data/test_data.txt' # no labels, for submission
 VERBOSE_LOGGING = False
 UNKNOWN_WORDS = {}
@@ -52,10 +53,20 @@ def tweet_embedding(tweet, word2idx, embeddings):
     vec_list = []
     tokens = tweet.split()
 
+    tokens = nltk.sentiment.util.mark_negation(tokens)
+    
     for word in tokens:
         try:
-            i = word2idx[word]
+            i = None
+            neg_idx = word.rfind('_NEG')
+            if neg_idx > 0:
+                word = word[:neg_idx]
+                i = np.negative(word2idx[word])
+            else:
+                i = word2idx[word]
+            
             vec_list.append(embeddings[i])
+            
         except KeyError:
             # ignore the word if it's not in vocabulary
             if VERBOSE_LOGGING:
