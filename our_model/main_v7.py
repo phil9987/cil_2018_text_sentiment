@@ -14,11 +14,13 @@ Currently:  Simple RNN model using Tensorflow's estimator interface.
 - adding lexicon analysis
 
 model v5: use them at the end of analysis as separate channels
+model v6: use them to initialize the RNN initial hidden state
+model v7: do not us them; test CNN on analysis of RNN output
 
 Note: some code for the lexicon analysis (loading of lexicons, counting) has already been used by
 myself in the NLU project. -- Pirmin Schmid
 
-v5.0 2018-06-19 Group The Optimists
+v7.0 2018-06-21 Group The Optimists
 """
 
 import datetime
@@ -34,7 +36,7 @@ import tensorflow as tf
 QUICKTEST = False
 VERBOSE = False
 
-MODEL_NAME = 'v5'
+MODEL_NAME = 'v6'
 
 IGNORE_UNKNOWN_WORDS = True
 HIDDEN_STATE_SIZE = 384
@@ -50,10 +52,6 @@ GRADIENT_CLIP = 5
 TRAIN = True
 EVALUATE = True
 PREDICT = True
-
-USE_RNN = True
-USE_EMOJI = True
-USE_LEXICON = True
 
 BATCH_SIZE = 64
 EPOCHS = 2
@@ -83,18 +81,13 @@ else:
 
 TEST_DATA = '../data/test_data.txt'                 # Path to test data (no labels, for submission)
 
-MODEL_NAME += '_'
-MODEL_NAME += 'A' if USE_RNN else ''
-MODEL_NAME += 'B' if USE_EMOJI else ''
-MODEL_NAME += 'C' if USE_LEXICON else ''
-if USE_RNN:
-    MODEL_NAME += '_stack' + str(RNN_STACK_DEPTH)
-    MODEL_NAME += '_gru' if GRU else '_lstm'
-    MODEL_NAME += '_dropout' if DROPOUT else ''
-    MODEL_NAME += '_size' + str(MAX_TWEET_SIZE)
-    MODEL_NAME += '_dim' + str(DIM)
-    MODEL_NAME += '_state' + str(HIDDEN_STATE_SIZE)
-    MODEL_NAME += '_unknowns_ignored' if IGNORE_UNKNOWN_WORDS else '_with_unknowns'
+MODEL_NAME += '_stack' + str(RNN_STACK_DEPTH)
+MODEL_NAME += '_gru' if GRU else '_lstm'
+MODEL_NAME += '_dropout' if DROPOUT else ''
+MODEL_NAME += '_size' + str(MAX_TWEET_SIZE)
+MODEL_NAME += '_dim' + str(DIM)
+MODEL_NAME += '_state' + str(HIDDEN_STATE_SIZE)
+MODEL_NAME += '_unknowns_ignored' if IGNORE_UNKNOWN_WORDS else '_with_unknowns'
 MODEL_NAME += '_quicktest' if QUICKTEST else ''
 
 MODEL_DIR = os.path.join(BASE_DIR, MODEL_NAME)
@@ -452,14 +445,22 @@ def lang_model_fn(features, labels, mode, params):
     emojis = features['emoji']
     lexicons = features['lexicon']
 
-    # --- A: RNN ---
     # shape [BATCH_SIZE, MAX_TWEET_SIZE, DIM]
     embedded_words = tf.nn.embedding_lookup(embeddings, words)
 
     # rnn_outputs: shape [BATCH_SIZE, MAX_TWEET_SIZE, HIDDEN_STATE_SIZE]
+    # initial_state: shape [BATCH_SIZE, HIDDEN_STATE_SIZE]
     # final_state: shape [BATCH_SIZE, HIDDEN_STATE_SIZE]
     stacked_rnn_cell = tf.contrib.rnn.MultiRNNCell([rnn_cell() for _ in range(RNN_STACK_DEPTH)])
-    initial_state = stacked_rnn_cell.zero_state(BATCH_SIZE, dtype=tf.float32)
+    init = tf.concat([emojis, lexicons], 1)
+    initial_state_prep = tf.contrib.layers.fully_connected(inputs=init, num_outputs=HIDDEN_STATE_SIZE * RNN_STACK_DEPTH, activation_fn=tf.sigmoid)
+    if RNN_STACK_DEPTH != 2:
+        # safety guard to keep the code simple
+        print('manual adjustment needed')
+        exit(1)
+    initial_state = (initial_state_prep[:, :HIDDEN_STATE_SIZE], initial_state_prep[:, HIDDEN_STATE_SIZE:])
+
+    # initial_state_orig = stacked_rnn_cell.zero_state(BATCH_SIZE, dtype=tf.float32)
     rnn_outputs, final_state = tf.nn.dynamic_rnn(cell=stacked_rnn_cell,
                                                  inputs=embedded_words,
                                                  time_major=False,
@@ -474,25 +475,7 @@ def lang_model_fn(features, labels, mode, params):
     flattened = tf.layers.flatten(inputs=rnn_outputs, name="flatten")
 
     # shape [BATCH_SIZE, SENTIMENTS]
-    rnn_logits = tf.contrib.layers.fully_connected(inputs=flattened, num_outputs=SENTIMENTS, activation_fn=tf.sigmoid)
-
-    # --- B: emojis ---
-    emojis_logits = tf.contrib.layers.fully_connected(inputs=emojis, num_outputs=SENTIMENTS, activation_fn=tf.sigmoid)
-
-
-    # --- C: lexicon ---
-    lexicon_logits = tf.contrib.layers.fully_connected(inputs=lexicons, num_outputs=SENTIMENTS, activation_fn=tf.sigmoid)
-
-    # --- combine all ---
-    concat_list = []
-    if USE_RNN:
-        concat_list.append(rnn_logits)
-    if USE_EMOJI:
-        concat_list.append(emojis_logits)
-    if USE_LEXICON:
-        concat_list.append(lexicon_logits)
-    combined = tf.concat(concat_list, 1)
-    logits = tf.contrib.layers.fully_connected(inputs=combined, num_outputs=SENTIMENTS, activation_fn=tf.sigmoid)
+    logits = tf.contrib.layers.fully_connected(inputs=flattened, num_outputs=SENTIMENTS, activation_fn=tf.sigmoid)
 
     # shape: [BATCH_SIZE]
     sentiment_prediction = tf.argmax(logits, axis=1)

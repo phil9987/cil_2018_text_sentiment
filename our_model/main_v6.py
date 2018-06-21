@@ -13,10 +13,13 @@ Currently:  Simple RNN model using Tensorflow's estimator interface.
 - adding emoj detector to have an additional classification vector (from Niko)
 - adding lexicon analysis
 
+model v5: use them at the end of analysis as separate channels
+model v6: use them to initialize the RNN initial hidden state
+
 Note: some code for the lexicon analysis (loading of lexicons, counting) has already been used by
 myself in the NLU project. -- Pirmin Schmid
 
-v5.0 2018-06-19 Group The Optimists
+v6.0 2018-06-20 Group The Optimists
 """
 
 import datetime
