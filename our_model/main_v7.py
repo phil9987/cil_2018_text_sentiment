@@ -36,7 +36,7 @@ import tensorflow as tf
 QUICKTEST = False
 VERBOSE = False
 
-MODEL_NAME = 'v6'
+MODEL_NAME = 'v7'
 
 IGNORE_UNKNOWN_WORDS = True
 HIDDEN_STATE_SIZE = 384
@@ -442,6 +442,8 @@ def lang_model_fn(features, labels, mode, params):
     # labels: shape [BATCH_SIZE]
     words = features['x']
     lengths = features['length']
+
+    # v7: emojis and lexicons are not used at the moment
     emojis = features['emoji']
     lexicons = features['lexicon']
 
@@ -452,15 +454,7 @@ def lang_model_fn(features, labels, mode, params):
     # initial_state: shape [BATCH_SIZE, HIDDEN_STATE_SIZE]
     # final_state: shape [BATCH_SIZE, HIDDEN_STATE_SIZE]
     stacked_rnn_cell = tf.contrib.rnn.MultiRNNCell([rnn_cell() for _ in range(RNN_STACK_DEPTH)])
-    init = tf.concat([emojis, lexicons], 1)
-    initial_state_prep = tf.contrib.layers.fully_connected(inputs=init, num_outputs=HIDDEN_STATE_SIZE * RNN_STACK_DEPTH, activation_fn=tf.sigmoid)
-    if RNN_STACK_DEPTH != 2:
-        # safety guard to keep the code simple
-        print('manual adjustment needed')
-        exit(1)
-    initial_state = (initial_state_prep[:, :HIDDEN_STATE_SIZE], initial_state_prep[:, HIDDEN_STATE_SIZE:])
-
-    # initial_state_orig = stacked_rnn_cell.zero_state(BATCH_SIZE, dtype=tf.float32)
+    initial_state = stacked_rnn_cell.zero_state(BATCH_SIZE, dtype=tf.float32)
     rnn_outputs, final_state = tf.nn.dynamic_rnn(cell=stacked_rnn_cell,
                                                  inputs=embedded_words,
                                                  time_major=False,
@@ -468,11 +462,15 @@ def lang_model_fn(features, labels, mode, params):
                                                  initial_state=initial_state,
                                                  dtype=tf.float32)
 
-    # currently a one layer step from this collected output state to the 2 labels
-    # can be extended to a deeper NN, of course
+    # v7 test deeper NN for analysis
+    conv1 = tf.layers.conv1d(inputs=rnn_outputs, filters=HIDDEN_STATE_SIZE/4, kernel_size=6, padding="valid", activation=tf.nn.relu)
+    pool1 = tf.layers.max_pooling1d(inputs=conv1, pool_size=2, strides=2)
 
-    # shape [BATCH_SIZE, MAX_TWEET_SIZE * HIDDEN_STATE_SIZE]
-    flattened = tf.layers.flatten(inputs=rnn_outputs, name="flatten")
+    conv2 = tf.layers.conv1d(inputs=pool1, filters=32, kernel_size=4, padding="valid", activation=tf.nn.relu)
+    pool2 = tf.layers.max_pooling1d(inputs=conv2, pool_size=2, strides=2)
+
+    # shape [BATCH_SIZE, 4 * 32]
+    flattened = tf.layers.flatten(inputs=pool2, name="flatten")
 
     # shape [BATCH_SIZE, SENTIMENTS]
     logits = tf.contrib.layers.fully_connected(inputs=flattened, num_outputs=SENTIMENTS, activation_fn=tf.sigmoid)
