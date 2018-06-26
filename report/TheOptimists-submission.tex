@@ -13,7 +13,7 @@
 \title{CIL 2018: Text Sentiment Classification}
 
 \author{
-  Pirmin Schmid, Philip Junker, Nikolas Göbel, Aryaman Fasciati\\
+  Pirmin Schmid, Philip Junker, Nikolas G\"obel, Aryaman Fasciati\\
   The Optimists\\
   Department of Computer Science, ETH Zurich, Switzerland
 }
@@ -21,30 +21,28 @@
 \maketitle
 
 \begin{abstract}
-  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-  eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
-  minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-  aliquip ex ea commodo consequat. Duis aute irure dolor in
-  reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-  culpa qui officia deserunt mollit anim id est laborum.
+  In this work we consider the task of classifying tweets by
+  sentiment. In particular we want to determine whether a given tweet,
+  which has been stripped of emoticons, used to include a positive
+  smiley ``:)'' or a negative smiley ``:(''. We present a stacked RNN
+  model trained on GloVe word embeddings. Our model achieves a
+  classification accuracy of \todo{final-accuracy}.
 \end{abstract}
 
 
 \section{Introduction}
 
-The goal of this project is to build a sentiment classifier
-that predicts whether a tweet text used to include a
-positive smiley :) or a negative smiley :(,
-based on the remaining text.
+The goal of this project is to build a sentiment classifier that
+predicts whether a tweet text used to include a positive smiley :) or
+a negative smiley :(, based on the remaining text.
 
-Our first baseline uses random forests and achieved an accuracy of 72\%.
-Our second baseline uses a Recurrent Neural Network (RNN) model with
-an accuracy of TODO\%.
+Our first baseline uses random forests and achieved an accuracy of
+72\%. Our second baseline uses a Recurrent Neural Network (RNN) model
+with an accuracy of \todo{rnn-baseline-accuracy}.
 
 In a third model, we refined our second baseline, incorporating
-\todo{describe novel approach}, in a RNN-based approach.
-This model achieved \todo{\%} accuracy.
+\todo{describe novel approach}, in a RNN-based approach. This model
+achieved \todo{\%} accuracy.
 
 
 \section{Related Work}
@@ -55,17 +53,43 @@ Write about related work \cite{go2016mastering}
 
 \subsection{First Baseline (B1)}
 
-Our first baseline uses a random forest model with unlimited max\_depth and 20 estimators.
-Each tweet is represented by the the average of its word embedding vectors.
-We used pretrained GloVe \cite{glove} embeddings from Stanford,
-together with a slightly adapted version of the preprocessor script
-provided by Stanford.
-Words that are not in the vocabulary are ignored.
+Our first baseline uses a random forest model with unlimited
+max\_depth and 20 estimators. We used the random forest implementation
+provided with the scikit-learn library. The classifier is trained on
+tweet embeddings, derived by computing the mean over all embedding
+vectors of the words contained within it. This approach does not
+differentiate between permutations of similar words. It also assigns
+equal weight to every word. Words that are not in the vocabulary are
+ignored. Word embeddings are provided by the GloVe \cite{glove}
+project from Stanford, pre-trained on two billion tweets. In addition
+to that, tweets were pre-processed with a slightly adapted version of
+the preprocessor script provided by Stanford.
 
 This model achieved an accuracy of 72\%.
 
 
 \subsection{Second Baseline (B2)}
+
+For the second baseline, we trained a stacked, recurrent neural
+network. In contrast to the random forest baseline, tweet embeddings
+were not aggregated in any way from their words. Rather, the network
+was trained on matrices of dimension \(word\_count_{tweet} * 200\). In
+contrast to B1, this model therefore does take word order into account
+and allows for different weights to be assigned to certain,
+sentiment-implying words, during training. Intuitively, we would
+expect the latter to result in significantly higher classification
+accuracy, compared to the random forest model. It is not as clear,
+whether taking word order into account during training is important
+for the task of sentiment classification and would thus dilute inputs
+in a sense.
+
+This model achieved an accuracy of 85\%.
+
+
+\subsection{Our Model}
+
+For our final model, we expanded on the RNN approach taken in baseline
+B2. We introduced two additional convolution layers.
 
 \section*{Acknowledgements}
 The authors wish to express their gratitude to the Euler and Leonhard
