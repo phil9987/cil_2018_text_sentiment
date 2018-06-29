@@ -10,6 +10,8 @@
 \newcommand{\todo}[1]{}
 \renewcommand{\todo}[1]{{\color{red} TODO: {#1}}}
 
+\newcommand{\pisch}[1]{\textit{\textcolor{blue}{pisch: #1}}}
+
 \begin{document}
 \title{CIL 2018: Text Sentiment Classification}
 
@@ -20,6 +22,8 @@
 }
 
 \maketitle
+
+\pisch{Suggestion: Alphabetical order of the authors?}
 
 \begin{abstract}
   In this work we consider the task of classifying tweets by
@@ -73,13 +77,25 @@ This model achieved an accuracy of 72\%.
 \subsection{Second Baseline (B2)}
 
 For the second baseline, we trained a stacked, recurrent neural
-network. In contrast to the random forest baseline, tweet embeddings
+network. Two GRU cells were stacked; a hidden state size of 384 was used.
+In contrast to the random forest baseline, tweet embeddings
 were not aggregated in any way from their words. Rather, the network
 was trained on matrices of dimension \(word\_count_{tweet} \times 200\).
+Words not known in the embedding vocabulary were ignored.
 Statistical analysis of the provided data in \autoref{fig:wordcount} shows that
 the majority ($>$98\%) of tweets have less than 30 words.
-Tweets longer than that were ignored, whereas shorter tweets were padded.
+Tweets longer than that were ignored during training and shortened for prediction,
+whereas shorter tweets were padded.
 
+All output of the RNN was used as input of a one layer fully connected NN to 2 nodes with a sigmoid activation function.
+Argmax was used to determine the sentiment. Loss was calculated with sparse\_softmax\_cross\_entropy\_with\_logits(); an Adam optimizer was used for learning with clipped gradient at 10 and a learning rate of $10^{-4}$. In total, the model was trained for 4 epochs on Leonhard.
+98 \% of the training data was used for training; 2 \% was used for evaluation.
+
+Smaller and larger hidden state sizes have been tested with lower accuracy; LSTM cells did not give a higher accuracy than GRU cells.
+All outputs of the RNN were used as input of the RNN to bring more state information into the final classifier step. Using only the final hidden state has been tested and gave lower accuracy.
+And finally, a small NN was used to handle the binary classification from the RNN state to allow also for non-linear transformation in contrast to the classic transformation with a matrix multiplication and potentially adding of a bias offset.
+
+\pisch{not yet sure about this discussion points here}
 In contrast to B1, this model does take word order into account
 and allows for different weights to be assigned to certain,
 sentiment-implying words, during training. Intuitively, we would
