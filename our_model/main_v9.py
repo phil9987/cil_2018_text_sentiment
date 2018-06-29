@@ -36,10 +36,10 @@ import time
 import tensorflow as tf
 
 # --- configuration --------------------------------------------------------------------------------
-QUICKTEST = True
+QUICKTEST = False
 VERBOSE = False
 
-MODEL_NAME = 'v9'
+MODEL_NAME = 'v9a'
 
 IGNORE_UNKNOWN_WORDS = True
 HIDDEN_STATE_SIZE = 384
@@ -57,8 +57,8 @@ EVALUATE = True
 PREDICT = True
 
 BATCH_SIZE = 64
-EPOCHS = 4
-EVALS_PER_EPOCH = 2
+EPOCHS = 1
+EVALS_PER_EPOCH = 4
 
 BASE_DIR = '/model_checkpoints'
 

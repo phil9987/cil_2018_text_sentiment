@@ -59,7 +59,7 @@ EVALUATE = True
 PREDICT = True
 
 BATCH_SIZE = 64
-EPOCHS = 4
+EPOCHS = 1
 EVALS_PER_EPOCH = 2
 
 BASE_DIR = '/model_checkpoints'
@@ -79,7 +79,7 @@ else:
     user = os.getenv('USER')
     BASE_DIR = '/cluster/scratch/' + user + BASE_DIR
     KEEP_CHECKPOINT_MAX = 2  # TF default 5
-    DIM = 200       # Dimension of embeddings. Possible choices: 25, 50, 100, 200
+    DIM = 100       # Dimension of embeddings. Possible choices: 25, 50, 100, 200
     TRAINING_DATA_POS = DATA_PATH + 'train_pos_full.txt'  # Path to positive training data
     TRAINING_DATA_NEG = DATA_PATH + 'train_neg_full.txt'  # Path to negative training data
     MAX_TWEET_SIZE = 30

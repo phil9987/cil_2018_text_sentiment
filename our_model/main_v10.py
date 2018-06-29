@@ -57,7 +57,7 @@ EVALUATE = True
 PREDICT = True
 
 BATCH_SIZE = 64
-EPOCHS = 4
+EPOCHS = 2
 EVALS_PER_EPOCH = 2
 
 BASE_DIR = '/model_checkpoints'
