@@ -4,6 +4,7 @@
 %\usepackage{balance}
 \usepackage{url}
 \usepackage{graphicx}
+\usepackage{hyperref}
 \usepackage{color}
 
 \newcommand{\todo}[1]{}
@@ -55,8 +56,9 @@ Write about related work \cite{go2016mastering}
 
 Our first baseline uses a random forest model with unlimited
 max\_depth and 20 estimators. We used the random forest implementation
-provided with the scikit-learn library \cite{scikit-learn}. The classifier is trained on
-tweet embeddings, derived by computing the mean over all embedding
+provided with the scikit-learn library \cite{scikit-learn}.
+The classifier is trained on tweet embeddings,
+derived by computing the mean over all embedding
 vectors of the words contained within it. This approach does not
 differentiate between permutations of similar words. It also assigns
 equal weight to every word. Words that are not in the vocabulary are
@@ -73,8 +75,12 @@ This model achieved an accuracy of 72\%.
 For the second baseline, we trained a stacked, recurrent neural
 network. In contrast to the random forest baseline, tweet embeddings
 were not aggregated in any way from their words. Rather, the network
-was trained on matrices of dimension \(word\_count_{tweet} * 200\). In
-contrast to B1, this model therefore does take word order into account
+was trained on matrices of dimension \(word\_count_{tweet} \times 200\).
+Statistical analysis of the provided data in \autoref{fig:wordcount} shows that
+the majority ($>$98\%) of tweets have less than 30 words.
+Tweets longer than that were ignored, whereas shorter tweets were padded.
+
+In contrast to B1, this model does take word order into account
 and allows for different weights to be assigned to certain,
 sentiment-implying words, during training. Intuitively, we would
 expect the latter to result in significantly higher classification
@@ -84,6 +90,13 @@ for the task of sentiment classification and would thus dilute inputs
 in a sense.
 
 This model achieved an accuracy of 85\%.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[scale=0.53]{word_count_histogram.png}
+  \caption{Word Count Distribution}
+  \label{fig:wordcount}
+\end{figure}
 
 
 \subsection{Our Model}
