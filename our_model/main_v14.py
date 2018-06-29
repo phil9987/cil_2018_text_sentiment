@@ -508,12 +508,12 @@ def lang_model_fn(features, labels, mode, params):
                                                  dtype=tf.float32)
 
     # v7 test deeper NN for analysis
-    conv1 = tf.layers.conv1d(inputs=rnn_outputs, filters=HIDDEN_STATE_SIZE, kernel_size=6, padding="valid", activation=tf.nn.relu)
+    #conv1 = tf.layers.conv1d(inputs=rnn_outputs, filters=HIDDEN_STATE_SIZE, kernel_size=6, padding="valid", activation=tf.nn.relu)
 
-    conv2 = tf.layers.conv1d(inputs=conv1, filters=128, kernel_size=4, padding="valid", activation=tf.nn.relu)
+    #conv2 = tf.layers.conv1d(inputs=conv1, filters=128, kernel_size=4, padding="valid", activation=tf.nn.relu)
 
-    # shape [BATCH_SIZE, 4 * 128]
-    flattened = tf.layers.flatten(inputs=conv2, name="flatten")
+    # shape [BATCH_SIZE, MAX_TWEET_SIZE * HIDDEN_STATE_SIZE]
+    flattened = tf.layers.flatten(inputs=rnn_outputs, name="flatten")
 
     # dense, shape [BATCH_SIZE, 256]
     dense = tf.layers.dense(inputs=flattened, units=256, activation=tf.nn.relu)
