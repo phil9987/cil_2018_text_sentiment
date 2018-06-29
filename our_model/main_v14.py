@@ -41,7 +41,7 @@ import time
 import tensorflow as tf
 
 # --- configuration --------------------------------------------------------------------------------
-QUICKTEST = True
+QUICKTEST = False
 VERBOSE = False
 
 MODEL_NAME = 'v14'
@@ -194,7 +194,7 @@ def load_embeddings():
     weights = []
 
     index = 0
-    for (l, w, e) in sorted_embeddings:
+    for (l, i, w, e) in sorted_embeddings:
         word2idx[w] = index
         idx2word[index] = w
         weights.append(e)
