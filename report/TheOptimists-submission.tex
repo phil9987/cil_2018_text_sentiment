@@ -74,19 +74,17 @@ applications, such as \todo{cite
 
 Our first baseline uses a random forest model with unlimited
 max\_depth and 20 estimators. We used the random forest implementation
-provided with the scikit-learn library \cite{scikit-learn}.
-The classifier is trained on tweet embeddings,
-derived by computing the mean over all embedding
-vectors of the words contained within it. This approach does not
-differentiate between permutations of similar words. It also assigns
-equal weight to every word. Words that are not in the vocabulary are
-ignored. Word embeddings are provided by the GloVe \cite{glove}
-project from Stanford, pre-trained on two billion tweets. In addition
-to that, tweets were pre-processed with a slightly adapted version of
-the preprocessor script provided by Stanford.
+provided with the scikit-learn library \cite{scikit-learn}.  The
+classifier is trained on tweet embeddings, derived by computing the
+mean over all embedding vectors of the words contained within it. This
+approach does not differentiate between permutations of similar
+words. It also assigns equal weight to every word. Words that are not
+in the vocabulary are ignored. Word embeddings are provided by the
+GloVe \cite{glove} project from Stanford, pre-trained on two billion
+tweets. In addition to that, tweets were pre-processed with a slightly
+adapted version of the preprocessor script provided by Stanford.
 
 This model achieved an accuracy of 72\%.
-
 
 \subsection{Second Baseline (B2)}
 
@@ -155,11 +153,13 @@ because we expect certain word sequences to indicate sentiment
 independent of where they appear inside a tweet.
 
 We therefore introduced two one-dimensional convolution layers each
-followed by a one-dimensional max-pooling layer. The max-pooling
-layers aggregate each convolution window into a single scalar. Outputs
-for every window are concatenated and passed on to a fully connected
-rectifier. In order to lessen the impact of overfitting, we apply a
-dropout rate of 0.4 during training.
+followed by a one-dimensional max-pooling layer. We chose convolution
+window sizes of six and four respectively, with no bias and ReLu
+activation. The max-pooling layers aggregate each pooling window into
+a single scalar. We chose a window size of two and strides of two for
+both layers. Outputs for every window are concatenated and passed on
+to a fully connected rectifier. In order to lessen the impact of
+overfitting, we apply a dropout rate of 0.4 during training.
 
 The final outputs are then fed into a two-unit layer, each unit
 indicating one of the two possible sentiments. Overall classification
