@@ -85,13 +85,25 @@ the majority ($>$98\%) of tweets have less than 30 words.
 Tweets longer than that were ignored during training and shortened for prediction,
 whereas shorter tweets were padded.
 
-All output of the RNN was used as input of a one layer fully connected NN to 2 nodes with a sigmoid activation function.
-Argmax was used to determine the sentiment. Loss was calculated with sparse\_softmax\_cross\_entropy\_with\_logits(); an Adam optimizer was used for learning with clipped gradient at 10 and a learning rate of $10^{-4}$. In total, the model was trained for 4 epochs on Leonhard.
-98 \% of the training data was used for training; 2 \% was used for evaluation.
+All output of the RNN was used as input of a single layer fully connected NN
+to 2 nodes with a sigmoid activation function.
+Argmax was used to determine the sentiment.
+Loss was calculated with sparse softmax cross entropy with logits and
+an Adam optimizer was used for learning with clipped gradient at 10
+and a learning rate of $10^{-4}$.
+In total, the model was trained for 4 epochs on Leonhard.
+98\% of the training data was used for training; 2\% was used for evaluation.
 
-Smaller and larger hidden state sizes have been tested with lower accuracy; LSTM cells did not give a higher accuracy than GRU cells.
-All outputs of the RNN were used as input of the RNN to bring more state information into the final classifier step. Using only the final hidden state has been tested and gave lower accuracy.
-And finally, a small NN was used to handle the binary classification from the RNN state to allow also for non-linear transformation in contrast to the classic transformation with a matrix multiplication and potentially adding of a bias offset.
+Smaller and larger hidden state sizes were tested but resulted in
+lower accuracy. Additonally, we experimented with LSTM cells, which did not give us
+a higher score than with GRU cells.
+All outputs of the RNN were used as input of the NN to bring more state
+information into the final classifier step. Using only the final hidde
+state has been tested and gave lower accuracy.
+And finally, a small NN was used to handle the binary classification from the RNN 
+state to allow also for non-linear transformation in contrast to the classic 
+transformation with a matrix multiplication and potentially adding of a
+bias offset.
 
 \pisch{not yet sure about this discussion points here}
 In contrast to B1, this model does take word order into account
