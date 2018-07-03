@@ -51,8 +51,17 @@ achieved \todo{\%} accuracy.
 
 
 \section{Related Work}
-Write about related work \cite{go2016mastering}
 
+Recurrent neural networks with their applicability to
+sequence-to-sequence tasks have been used across many tasks,
+especially in the NLP domain, such as generating text (\todo{Sutskever
+  et al.}). Although RNNs seem to be primarily used for problems more
+complex than binary classification, we were interested in exploring
+the application of short-term memory to our task. This can be achieved
+via the Long short-term memory (LSTM) or Gated recurrent unit (GRU)
+variants of RNNs. Both have found extensive use in practical
+applications, such as \todo{cite
+  https://ai.googleblog.com/2016/05/chat-smarter-with-allo.html}.
 
 \section{Models}
 
@@ -117,10 +126,30 @@ This model achieved an accuracy of 85\%.
 
 \subsection{Our Model}
 
-For our final model, we expanded on the RNN approach taken in baseline
-B2. We introduced two additional convolution layers.
+For our final model, we decided to expand on the promising RNN
+approach taken in baseline B2. We can consider the RNN output to
+represent learned tweet features, which bear significance for
+sentiment classification. Consequently, we wanted to re-combine these
+features in a structure-preserving, context-sensitive
+manner. Convolutional neural networks fit this bill and in addition
+possess the property of being invariant w.r.t
+translation. Intuitively, this sounded useful to the task at hand,
+because we expect certain word sequences to indicate sentiment
+independent of where they appear inside a tweet.
+
+We therefore introduced two one-dimensional convolution layers each
+followed by a one-dimensional max-pooling layer. The max-pooling
+layers aggregate each convolution window into a single scalar. Outputs
+for every window are concatenated and passed on to a fully connected
+rectifier. In order to lessen the impact of overfitting, we apply a
+dropout rate of 0.4 during training.
+
+The final outputs are then fed into a two-unit layer, each unit
+indicating one of the two possible sentiments. Overall classification
+output is then obtained by applying the \texit{argmax} function.
 
 \section*{Acknowledgements}
+
 The authors wish to express their gratitude to the Euler and Leonhard
 clusters at ETH, whose unwavering computational effort this project
 could not have done without.
