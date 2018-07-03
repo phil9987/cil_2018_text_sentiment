@@ -201,9 +201,11 @@ three hours. The model achieved an accuracy of 86.6\%.
 \section*{Other Approaches}
 
 The model described in \autoref{our-model} significantly outperforms
-the reandom forest classifier described in \autoref{b1} and improves
+the random forest classifier described in \autoref{b1} and improves
 slightly upon the plain RNN approach in \autoref{b2}. In addition to
 these, we experimented with various other approaches.
+
+\subsection*{Effect of word order}
 
 In particular, we were interested in exploring the tradeoff between
 increasing the amount of information encoded in each input (e.g. bag
@@ -227,6 +229,17 @@ This model achieved an accuracy of 85.2\%, confirming our hypothesis
 that word order was not a significant contributor to accuracy, but
 disproving the theory that respecting word order would add too much
 noise for the RNN to handle.
+
+\subsection*{Detecting negation}
+
+We also tried to identify words within the scope of a negation using
+NLTK. Embeddings of negated words would then be inverted before
+feeding them into the RNN. Although detecting negation scopes and even
+simple cases of double negation seemed to work very robustly, the
+resulting model merely matched the accuracy of the one presented in
+\autoref{our-model}, 86.7\%. On the other hand, this result underlines
+the power of the LSTM/GRU cells iniside the RNN, which seem to be able
+to keep track of negation scopes automatically.
 
 \section*{Conclusions}
 
