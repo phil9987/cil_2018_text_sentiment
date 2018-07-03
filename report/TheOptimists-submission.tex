@@ -192,6 +192,12 @@ The architecture of our model is summarized in \autoref{fig:ourmodel}.
   \label{fig:ourmodel}
 \end{figure}
 
+We trained the model for four epochs, optiziming sparse softmax cross
+entropy using the Adam gradient descent algorithm. During training,
+gradients are clipped to 10 to avoid instabilities (\texttt{Exploding
+  Gradients Problem}). Training on the Leonhard cluster took around
+three hours.
+
 \section*{Conclusions}
 
 Overall our additions do improve on the simple RNN baseline
