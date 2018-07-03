@@ -27,11 +27,13 @@
   In this work we consider the task of classifying tweets by
   sentiment. In particular we want to determine whether a given tweet,
   which has been stripped of emoticons, used to include a positive
-  smiley ``:)'' or a negative smiley ``:(''. We present a stacked RNN
-  model trained on GloVe word embeddings. Our model achieves a
-  classification accuracy of 86.6\%.
+  smiley ``:)'' or a negative smiley ``:(''. We present three models,
+  a random forest classifier, a simple stacked GRU/RNN model, and a
+  more complex neural network combining GRU/RNN with convolutional
+  layers. We train these models on GloVe word embeddings, pre-trained
+  on 2.5 billion tweets. Our model achieves a classification accuracy
+  of 86.6\%.
 \end{abstract}
-
 
 \section{Introduction}
 The global prevalence of social media has enabled a massive amount of users
@@ -179,8 +181,8 @@ word embeddings instead of a simple bag of words).
 \section*{Acknowledgements}
 
 The authors wish to express their gratitude to the Euler and Leonhard
-clusters at ETH, whose unwavering computational effort this project
-could not have done without.
+clusters at ETH, without whose unwavering computational effort this
+project could not have been done.
 
 \bibliographystyle{IEEEtran}
 \bibliography{TheOptimists-literature}
