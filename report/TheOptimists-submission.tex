@@ -55,7 +55,7 @@ with an accuracy of \todo{rnn-baseline-accuracy}.
 
 In a third model, we refined our second baseline, incorporating
 \todo{describe novel approach}, in a RNN-based approach. This model
-achieved \todo{\%} accuracy.
+achieved 86.6\% accuracy.
 
 \section{Related Work}
 
@@ -72,7 +72,7 @@ question answering \cite{DiWang}, and video to text \cite{DBLP}.
 
 \section{Models}
 
-\subsection{First Baseline (B1)}
+\subsection{First Baseline (B1)} \label{b1}
 
 Our first baseline uses a random forest model with unlimited
 max\_depth and 20 estimators. We used the random forest implementation
@@ -158,7 +158,7 @@ This model achieved an accuracy of 85\%.
 \end{figure}
 
 
-\subsection{Our Model}
+\subsection{RNN + Convolution} \label{our-model}
 
 For our final model, we decided to expand on the promising RNN
 approach taken in baseline B2. We can consider the RNN output to
@@ -196,7 +196,37 @@ We trained the model for four epochs, optiziming sparse softmax cross
 entropy using the Adam gradient descent algorithm. During training,
 gradients are clipped to 10 to avoid instabilities (\texttt{Exploding
   Gradients Problem}). Training on the Leonhard cluster took around
-three hours.
+three hours. The model achieved an accuracy of 86.6\%.
+
+\section*{Other Approaches}
+
+The model described in \autoref{our-model} significantly outperforms
+the reandom forest classifier described in \autoref{b1} and improves
+slightly upon the plain RNN approach in \autoref{b2}. In addition to
+these, we experimented with various other approaches.
+
+In particular, we were interested in exploring the tradeoff between
+increasing the amount of information encoded in each input (e.g. bag
+of words vs embedding matrix) and the additional noise invited by
+doing so. For example, even though it would seem that a sophisticated
+model like the RNN used in \autoref{b2} and \autoref{our-model} should
+benefit from more information (word order, context) this is only true
+in practice assuming sufficiently large datasets and computational
+resources.
+
+It was our suspicion that weighing words independently had a much
+stronger effect on classification performance than respecting
+different word orders. Therefore we re-trained the RNN model presented
+in \autoref{b2} again, but modified the pre-processing steps. Instead
+of providing each tweet's embedding matrix as is, we sorted the
+columns by vector norm. The idea was to normalize word order, while
+still preserving the ability to assign individual weights to
+words.
+
+This model achieved an accuracy of 85.2\%, confirming our hypothesis
+that word order was not a significant contributor to accuracy, but
+disproving the theory that respecting word order would add too much
+noise for the RNN to handle.
 
 \section*{Conclusions}
 
