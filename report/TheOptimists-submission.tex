@@ -64,9 +64,11 @@ sequence-to-sequence tasks have been used across many tasks,
 especially in the NLP domain, such as generating text \cite{Sutskever}.
 Although RNNs seem to be primarily used for problems more
 complex than binary classification, we were interested in exploring
-the application of short-term memory to our task. This can be achieved
-via the Long short-term memory (LSTM) or Gated recurrent unit (GRU)
-variants of RNNs. Both have found extensive use in practical
+the application of short-term memory to our task. 
+Because the sentiment of a sentence often depends on more than one word 
+we assume that this will lead to a better sentiment prediction of our model.
+This can be achieved via the Long short-term memory (LSTM) or 
+Gated recurrent unit (GRU) variants of RNNs. Both have found extensive use in practical
 applications, such as predictive chat replies \cite{allo},
 question answering \cite{DiWang}, and video to text \cite{DBLP}.
 
@@ -82,7 +84,7 @@ Tweets from the datasets are run through a pre-processing script,
 provided by the GloVe project. The pre-processor normalizes tweets,
 for example by replacing user names with a single token indicating a
 mention. More importantly, symbols used commonly in tweets, such as
-the heart ``<3'', are converted into tokens that are contained in the
+the heart ``\textless3'', are converted into tokens that are contained in the
 vocabulary.
 
 Input tweets are then split into words. Each word is looked up in the
