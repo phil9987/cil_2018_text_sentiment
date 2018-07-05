@@ -88,7 +88,7 @@ the heart ``\textless3'', are converted into tokens that are contained in the
 vocabulary.
 
 Input tweets are then split into words. Each word is looked up in the
-embedding dictionary. We use 200 dimensional word vectors. Words that
+embedding dictionary. We use 200 dimensional word embedding vectors. Words that
 are not in the vocabulary are ignored. All word embeddings for a given
 tweet are then aggregated into a single vector, by computing their
 mean. Word embeddings are provided by the GloVe \cite{glove} project
@@ -130,7 +130,7 @@ In total, the model was trained for 4 epochs on Leonhard.
 98\% of the training data was used for training; 2\% was used for evaluation.
 
 Smaller and larger hidden state sizes were tested but resulted in
-lower accuracy. Additonally, we experimented with LSTM cells, which did not give us
+lower accuracy. Additonally, we experimented with LSTM cells, which did not result in
 a higher score than with GRU cells.
 All outputs of the RNN were used as input of the NN to bring more state
 information into the final classifier step. Using only the final hidde
