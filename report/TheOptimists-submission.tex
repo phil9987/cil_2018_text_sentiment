@@ -25,18 +25,18 @@
 
 \begin{abstract}
   In this work we consider the task of classifying tweets by
-  sentiment. In particular we want to determine whether a given tweet,
-  which has been stripped of emoticons, used to include a positive
-  smiley ``:)'' or a negative smiley ``:(''. We present three models,
-  a random forest classifier, a simple stacked GRU/RNN model, and a
-  more complex neural network combining GRU/RNN with convolutional
-  layers. We train these models on GloVe word embeddings, pre-trained
+  sentiment. In particular we want to determine whether a given tweet
+  is associated with a positive smiley ``:)'' or a negative smiley ``:(''
+  after having been stripped of these emoticons. We present two baseline models,
+  a random forest classifier and a simple stacked GRU/RNN model, and a
+  third more complex neural network combining GRU/RNN with convolutional
+  layers and deeper NN. We train these models on GloVe word embeddings, pre-trained
   on 2.5 billion tweets. 
   Two baselines were implemented as a reference for the accuracy of our final model. 
   Our first baseline uses random forests and achieved an accuracy of 72\%. 
-  Our second baseline uses a Recurrent Neural Network (RNN) model with an accuracy of TODO: rnn-baseline-accuracy.
-  For our final implementation we refined our second baseline, incorporating \todo{describe novel approach}, in a RNN-based approach. 
-  Our final model achieves a classification accuracy of 86.6\%.
+  Our second baseline uses a Recurrent Neural Network (RNN) model with an accuracy of 85.2\%.
+  Our best final model achieved an accuracy of 87.4\% with this initial first half of the test set and
+  an accuracy of 86.6\% with the second half of the test set that was secret during development.
 \end{abstract}
 
 \section{Introduction}
@@ -55,9 +55,9 @@ a negative smiley :(, based on the remaining text.
 
 \section{Related Work}
 
-Recurrent neural networks with their applicability to
+Recurrent neural networks (RNN) with their applicability to
 sequence-to-sequence tasks have been used across many tasks,
-especially in the NLP domain, such as generating text \cite{Sutskever}.
+especially in the natural language processing (NLP) domain, such as generating text \cite{Sutskever}.
 Although RNNs seem to be primarily used for problems more
 complex than binary classification, we were interested in exploring
 the application of short-term memory to our task. 
@@ -101,7 +101,7 @@ every word when computing the mean, whereas we would commonly expect a
 small subset of words to be disproportionally strong indicators of
 sentiment (``love'', ``hate'', ``good'', ``bad'', etc...).
 
-This model achieved an accuracy of 72\%.
+This model achieved an accuracy of 72\% with the initial half half of the test set.
 
 \subsection{Second Baseline (B2)} \label{b2}
 
@@ -112,7 +112,7 @@ were not aggregated in any way from their words. Rather, the network
 was trained on matrices of dimension \(word\_count_{tweet} \times 200\).
 Words not known in the embedding vocabulary were ignored.
 Statistical analysis of the provided data in \autoref{fig:wordcount} shows that
-the majority ($>$98\%) of tweets have less than 30 words.
+the majority ($>$98\%) of tweets have less or equal than 30 words.
 Tweets longer than that were ignored during training and shortened for prediction,
 whereas shorter tweets were padded.
 
@@ -126,27 +126,24 @@ In total, the model was trained for 4 epochs on Leonhard.
 98\% of the training data was used for training; 2\% was used for evaluation.
 
 Smaller and larger hidden state sizes were tested but resulted in
-lower accuracy. Additonally, we experimented with LSTM cells, which did not result in
+lower accuracy. Fewer (one) and more (three) layers also resulted in lower accuracy.
+Additonally, we experimented with LSTM cells, which did not result in
 a higher score than with GRU cells.
 All outputs of the RNN were used as input of the NN to bring more state
-information into the final classifier step. Using only the final hidde
+information into the final classifier step. Using only the final hidden
 state has been tested and gave lower accuracy.
-And finally, a small NN was used to handle the binary classification from the RNN 
-state to allow also for non-linear transformation in contrast to the classic 
-transformation with a matrix multiplication and potentially adding of a
-bias offset.
 
-\pisch{not yet sure about this discussion points here}
-In contrast to B1, this model does take word order into account
-and allows for different weights to be assigned to certain,
-sentiment-implying words, during training. Intuitively, we would
-expect the latter to result in significantly higher classification
-accuracy, compared to the random forest model. It is not as clear,
-whether taking word order into account during training is important
-for the task of sentiment classification and would thus dilute inputs
-in a sense.
+Typically, a matrix multiplication (and optionally addition of a bias vector) is used to
+transform the output state of each RNN time step into e.g. the vocabulary space
+for seq2seq predictions. Here we used the mentioned single layer fully connected
+NN for the reduction from the quite large RNN output state the 2 nodes representing the sentiments
+to additionally allow for non-linear transformations.
 
-This model achieved an accuracy of 85\%.
+We expected this RNN model to perform better than baseline B1 because
+much more implicit information could be used for the model, such as
+specific word vectors and sequence of these vectors.
+
+Indeed, this baseline model B2 achieved an accuracy of 85.2\% with the initial half half of the test set.
 
 \begin{figure}[h!]
   \centering
@@ -158,30 +155,47 @@ This model achieved an accuracy of 85\%.
 
 \subsection{RNN + Convolution} \label{our-model}
 
-For our final model, we decided to expand on the promising RNN
-approach taken in baseline B2. We can consider the RNN output to
+With this large jump of accuracy from B1 to B2, we were very hopeful to
+achieve additional significant improvements when adding additional
+creative approaches to the problem. The most important ones are listed in the next
+section in more detail.
+
+Unfortunately, most of them revealed to be unsuccessful. Thus, we settled on the
+ improved model as described in detail in this section. It provided the best
+ accuracy of all tested models. 
+
+Our final model bases on the promising RNN model used in baseline B2.
+We can consider the RNN output to
 represent learned tweet features, which bear significance for
 sentiment classification. Consequently, we wanted to re-combine these
 features in a structure-preserving, context-sensitive
-manner. Convolutional neural networks fit this bill and in addition
+manner. Convolutional neural networks (CNN) fit this bill and in addition
 possess the property of being invariant w.r.t
-translation. Intuitively, this sounded useful to the task at hand,
+translation \pisch{TODO: please add reference for this}.
+Intuitively, this sounded useful to the task at hand,
 because we expect certain word sequences to indicate sentiment
 independent of where they appear inside a tweet.
 
 We therefore introduced two one-dimensional convolution layers each
-followed by a one-dimensional max-pooling layer. We chose convolution
-window sizes of six and four respectively, with no bias and ReLu
-activation. The max-pooling layers aggregate each pooling window into
+followed by a one-dimensional max-pooling layer and a drop layer. We chose convolution
+window sizes of six and four respectively, with ReLu
+activation function. The max-pooling layers aggregate each pooling window into
 a single scalar. We chose a window size of two and strides of two for
-both layers. Outputs for every window are concatenated and passed on
+both layers.
+
+Outputs for every window are concatenated and passed on
 to a fully connected rectifier. In order to lessen the impact of
 overfitting, we apply a dropout rate of 0.4 during training.
 
 The final outputs are then fed into a two-unit layer, each unit
 indicating one of the two possible sentiments. Overall classification
 output is then obtained by applying the \texttt{argmax} function.
-The architecture of our model is summarized in \autoref{fig:ourmodel}.
+
+The architecture of this processing of the RNN output states follows the CNN example
+provided in the tensorflow documentation\footnote{https://www.tensorflow.org/tutorials/layers} with the difference that the
+tensorflow example uses a 2D convolution and we use a 1D (temporal) convolution.
+The architecture of our entire model is summarized in \autoref{fig:ourmodel}.
+
 
 \begin{figure}[h!]
   \centering
@@ -190,11 +204,14 @@ The architecture of our model is summarized in \autoref{fig:ourmodel}.
   \label{fig:ourmodel}
 \end{figure}
 
-We trained the model for four epochs, optiziming sparse softmax cross
-entropy using the Adam gradient descent algorithm. During training,
-gradients are clipped to 10 to avoid instabilities (\texttt{Exploding
-  Gradients Problem}). Training on the Leonhard cluster took around
-three hours. The model achieved an accuracy of 86.6\%.
+We trained the model for four epochs. Loss was calculated with sparse softmax cross entropy with logits and
+an Adam optimizer was used for learning with clipped gradient at 10 (to avoid instabilities; see Exploding
+  Gradients Problem) and a learning rate of $10^{-4}$. Training on the Leonhard cluster took around
+three hours.
+
+This model achieved an accuracy of 87.4\% with the initial half of the test set,
+which is a small improvement over the baseline B2.
+The model achieved an accuracy of 86.6\% with the second/final half of the test set.
 
 \section*{Other Approaches}
 
@@ -202,6 +219,8 @@ The model described in \autoref{our-model} significantly outperforms
 the random forest classifier described in \autoref{b1} and improves
 slightly upon the plain RNN approach in \autoref{b2}. In addition to
 these, we experimented with various other approaches.
+However, no additional improvements could be achieved with
+any of these creative methods.
 
 \subsection*{Effect of word order}
 
@@ -212,7 +231,7 @@ doing so. For example, even though it would seem that a sophisticated
 model like the RNN used in \autoref{b2} and \autoref{our-model} should
 benefit from more information (word order, context) this is only true
 in practice assuming sufficiently large datasets and computational
-resources.
+resources \pisch{TODO not fully clear to me; is there a ref. for this reasoning?}.
 
 It was our suspicion that weighing words independently had a much
 stronger effect on classification performance than respecting
@@ -222,22 +241,54 @@ of providing each tweet's embedding matrix as is, we sorted the
 columns by vector norm. The idea was to normalize word order, while
 still preserving the ability to assign individual weights to
 words.
+\pisch{TODO might it be helpful to describe this as a transformation of a
+seq2seq model as used in classic RNN into a bag-of-words model?
+just a thought}
 
+
+\pisch{I do not agree with this conclusion. This result is lower than
+the result of our model with 87.4\%. thus bag of words performs
+worse than keeping the seq. Or did I miss something?}
 This model achieved an accuracy of 85.2\%, confirming our hypothesis
 that word order was not a significant contributor to accuracy, but
 disproving the theory that respecting word order would add too much
 noise for the RNN to handle.
 
+
 \subsection*{Detecting negation}
 
 We also tried to identify words within the scope of a negation using
-NLTK. Embeddings of negated words would then be inverted before
+NLTK \pisch{TODO: add function name?}. Embedding vectors of negated words would then be multiplied by $-1.0$ before
 feeding them into the RNN. Although detecting negation scopes and even
 simple cases of double negation seemed to work very robustly, the
-resulting model merely matched the accuracy of the one presented in
-\autoref{our-model}, 86.7\%. On the other hand, this result underlines
+resulting model had a bit a lower accuracy than chosen final model presented in
+\autoref{our-model}: 86.7\%. On the other hand, this result underlines
 the power of the LSTM/GRU cells iniside the RNN, which seem to be able
 to keep track of negation scopes automatically.
+
+
+\subsection*{Additional training of the GloVe vectors}
+
+For most models, we used the pre-trained 200 dimensional GloVe embeddings as constants
+that were looked up within the tensorflow model. We tested additional training on these
+pre-trained embeddings. Due to memory limitations of the GPU on Leonhard, we could only
+use 100 dimensional GloVe embeddings for that test that did not improve the accuracy
+with the first half of the test set.
+
+
+\subsection*{Additional embeddings}
+
+And finally, we also tested additional embeddings. We considered the remaining emojis in the tweets of particular interest.
+Thus, we created an additional embedding vector that encoded the counts of the known emojis \pisch{TODO are there any references for this?; any more description needed/desired here?}.
+
+And additionally, we tested whether sentiment classification using lexicons of known positive and negative words could be used to improve our classifier. Basically a difference value was calculated from the count of positive words in a tweet minus the count of negative words. Defined words like "not" were used to invert this value.\footnote{A more extended version of this additional python code written by the same author (PS) had been used in his NLU group project 2 as described there. For this project here, no n-grams were built for multiple sentences, of course. Only the plain score for each tweet was used.} This concept follows the ideas described in the paper of Chaturvedi et al. 2017~\cite{chaturvedi2017} and the available source code~\cite{emnlp}.
+
+We tested both additional embeddings in various variants whether they could improve the accuracy of the model. First, we tested them as additional inputs of a final NN that took the results of baseline 2 model and these additional small embedding vectors to get the final 2 sentiment nodes. Argmax for prediction, loss and optimizing functions for training were used identically as defined above.
+
+Second, we tested these 2 additional embeddings in a small one layer NN to generate a non-zero initial hidden state for the RNN. The rest of the model was identical to baseline 2. Here, the idea was tested whether such key information could be used to train relevant biases to the afterwards running RNN similar to the human brain that may take such key words as a first bias/primer when reading the entire tweet.
+
+Despite theoretical considerations and despite the added complexity, both variants did not improve the accuracy of the models over the baseline B2.
+
 
 \section*{Conclusions}
 
@@ -245,18 +296,25 @@ Overall our additions do improve on the simple RNN baseline
 established in \autoref{b2}, but not by much. Both RNN models do
 however improve significantly on the random forest classifier. This
 could hint at the strength and relative ease of an approach based on
-taking short-term memory into account. Further investigation is
-neccessary to determine, whether the improvements are due to the GRU
-units or simply a result of the more powerful input model (sequence of
-word embeddings instead of a simple bag of words).
+taking short-term memory into account.
+
+% pisch: I think this part is better removed. OK?
+%Further investigation is
+%neccessary to determine, whether the improvements are due to the GRU
+%units or simply a result of the more powerful input model (sequence of
+%word embeddings instead of a simple bag of words).
+
+Despite testing various additional published and creative methods in addition,
+we could not improve accuracy over the chosen final model.
 
 A drawback of the more complex model (with respect to the relatively
-small increase in accuracy) is the increase in parameters (stack size,
+small increase in accuracy) is the increased amount of available hyper-parameters
+that can be tuned in the model, such as stack size,
 convolution and pooling window sizes, stride lengths, dropout rate,
-activation functions, etc...) that would have to be empirically
+activation functions, etc. These hyper-parameters would have to be empirically
 determined (via a grid search, for example). In combination with the
 computational resources required to train the model, this makes it
-very hard to further improve the model in a structured way.
+ harder to further improve the model in a structured way.
 
 \section*{Acknowledgements}
 
