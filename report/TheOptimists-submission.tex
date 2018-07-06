@@ -101,14 +101,14 @@ words. In particular, this approach does not differentiate between
 permutations of similar words at all. It also assigns equal weight to
 every word when computing the mean, whereas we would commonly expect a
 small subset of words to be disproportionally strong indicators of
-sentiment (``love'', ``hate'', ``good'', ``bad'', etc...).
+sentiment (``love'', ``hate'', ``good'', ``bad'', etc.).
 
 This model achieved an accuracy of 72\% with the initial half of the test set.
 
 \subsection{Second Baseline (B2)} \label{subsec:b2}
 
 For the second baseline, we trained a stacked, recurrent neural
-network. Two GRU cells were stacked; a hidden state size of 384 was used.
+network. Two GRU cells were stacked; a hidden state size of 384 was used for each of them.
 In contrast to the random forest baseline, tweet embeddings
 were not aggregated in any way from their words. Rather, the network
 was trained on matrices of dimension \(word\_count_{tweet} \times 200\).
@@ -116,7 +116,8 @@ Words not known in the embedding vocabulary were ignored.
 Statistical analysis of the provided data in \autoref{fig:wordcount} shows that
 the majority ($>$98\%) of tweets have less or equal than 30 words.
 Tweets longer than that were ignored during training and shortened for prediction,
-whereas shorter tweets were padded.
+whereas shorter tweets were padded with 0 vectors to achieve proper tensor dimensions.
+A dynamic RNN was used, and the word count was provided for each tweet.
 
 All output of the RNN was used as input of a single layer fully connected NN
 to 2 nodes with a sigmoid activation function.
@@ -139,7 +140,7 @@ Typically, a matrix multiplication (and optionally addition of a bias vector) is
 transform the output state of each RNN time step into e.g. the vocabulary space
 for seq2seq predictions. Here we used the above-mentioned single-layer
 fully-connected NN for the reduction from the quite large RNN output state to
-the two nodes representing the sentiments, to allow for additional
+the two nodes representing the sentiments to allow for additional
 non-linear transformations.
 
 We expected this RNN model to perform better than baseline B1 because
