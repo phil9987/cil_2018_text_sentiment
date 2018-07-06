@@ -238,28 +238,22 @@ doing so. For example, even though it would seem that a sophisticated
 model like the RNN used in \autoref{subsec:b2} and \autoref{subsec:our-model}
 should benefit from more information (word order, context) this is only true
 in practice assuming sufficiently large datasets and computational
-resources \pisch{TODO not fully clear to me; is there a ref. for this reasoning?}.
+resources. \pisch{TODO not fully clear to me; is there a ref. for this reasoning?}.
 
 It was our suspicion that weighing words independently had a much
 stronger effect on classification performance than respecting
 different word orders. Therefore we re-trained the RNN model presented
-in \autoref{subsec:b2} again, but modified the pre-processing steps. Instead
-of providing each tweet's embedding matrix as is, we sorted the
-columns by vector norm. The idea was to normalize word order, while
-still preserving the ability to assign individual weights to
-words.
-\pisch{TODO might it be helpful to describe this as a transformation of a
-seq2seq model as used in classic RNN into a bag-of-words model?
-just a thought}
+in \autoref{subsec:b2} again, but modified the pre-processing
+steps. Instead of providing each tweet's embedding matrix as is, we
+sorted the columns by vector norm. The idea was to normalize word
+order, while still preserving the ability to assign individual weights
+to words. This corresponds to a restriction of the usual
+sequence-to-sequence formulation for RNNs to a bag-of-words model.
 
-
-\pisch{I do not agree with this conclusion. This result is lower than
-the result of our model with 87.4\%. thus bag of words performs
-worse than keeping the seq. Or did I miss something?}
-This model achieved an accuracy of 85.2\%, confirming our hypothesis
-that word order was not a significant contributor to accuracy, but
-disproving the theory that respecting word order would add too much
-noise for the RNN to handle.
+This model achieved an accuracy of 85.2\%, indicating that word order
+was not the primary contributor to accuracy, but also showing that the
+RNN did indeed benefit from the additional input information given by
+the word sequence in the tweet.
 
 
 \subsection*{Detecting negation}
@@ -287,10 +281,11 @@ did not improve the accuracy with the first half of the test set.
 
 \subsection*{Additional embeddings}
 
-Finally, we also tested additional embeddings.
-We considered the remaining emojis in the tweets of particular interest.
-Thus, we created an additional embedding vector that encoded the counts of the
-known emojis \pisch{TODO are there any references for this?; any more description needed/desired here?}.
+Finally, we also tested additional embeddings.  We considered the
+remaining emojis in the tweets of particular interest. Thus, we
+created an additional embedding vector that encoded the counts of the
+known emojis. We could not find precedence for this sort of processing
+in the literature, but deemed it worthwile to attempt.
 
 Additionally, we tested whether sentiment classification using lexicons of known 
 positive and negative words could be used to improve our classifier.
