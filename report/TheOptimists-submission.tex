@@ -30,13 +30,13 @@
   after having been stripped of these emoticons. We present two baseline models,
   a random forest classifier and a simple stacked GRU/RNN model, and a
   third more complex neural network combining GRU/RNN with convolutional
-  layers and deeper NN. We train these models on GloVe word embeddings, pre-trained
+  layers and deeper NN. We trained these models on GloVe word embeddings, pre-trained
   on 2.5 billion tweets. 
-  Two baselines were implemented as a reference for the accuracy of our final model. 
-  Our first baseline (random forest) achieved an accuracy of 72\%. 
-  Our second (RNN/GRU) achieved accuracy of 85.2\%.
-  Our best final model achieved an accuracy of 87.4\% with the initial first half
-  of the test set and 86.6\% with the second half of the test set
+  Two baselines were implemented as a reference for the prediction accuracy of our final model. 
+  Our first baseline (random forest) achieved an accuracy of 72\% based on the initial first half of the test set. 
+  Our second baseline (RNN/GRU) achieved an accuracy of 85.2\%.
+  Our best final model achieved an accuracy of 87.4\% with this test set. After the submission deadline, an accuracy of 
+  86.6\% was revealed for our model based on the second half of the test set
   that was secret during development.
 \end{abstract}
 
@@ -58,13 +58,13 @@ a negative smiley :(, based on the remaining text.
 \section{Related Work}
 
 Recurrent neural networks (RNN) with their applicability to
-sequence-to-sequence tasks have been used across many tasks,
+sequence-to-sequence (seq2seq) tasks have been used across many tasks,
 especially in the natural language processing (NLP) domain, such as generating text \cite{Sutskever}.
 Although RNNs seem to be primarily used for problems more
 complex than binary classification, we were interested in exploring
 the application of short-term memory to our task. 
 Because the sentiment of a sentence often depends on more than one word 
-we assume that this will lead to a better sentiment prediction of our model.
+we assumed that this will lead to a better sentiment prediction of our model.
 This can be achieved via the Long short-term memory (LSTM) or 
 Gated recurrent unit (GRU) variants of RNNs. Both have found extensive use in practical
 applications, such as predictive chat replies \cite{allo},
