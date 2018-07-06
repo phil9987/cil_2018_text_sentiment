@@ -69,12 +69,6 @@ cd utils
 source activate_on_leonhard.source
 ```
 
-## Submitting a Job
-
-``` shell
-bsub -B -N -n 4 -R "rusage[mem=16000,ngpus_excl_p=1]" python3 simple_rnn.py
-```
-
 ## Baseline I: Random Forest Classifier
 
 The code for the random forest classification is contained in the
@@ -82,8 +76,7 @@ The code for the random forest classification is contained in the
 the cluster, a job should be started as follows:
 
 ``` shell
-module load python
-bsub -n 1 -R "rusage[mem=16384]" -W 3:59 "python baseline.py"
+bsub -B -N -n 4 -R "rusage[mem=16000,ngpus_excl_p=1]" python3 simple_rnn.py
 ```
 
 It's worth to have a look at the documentation of scikit learn, there
@@ -93,7 +86,11 @@ http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestCl
 ## Baseline II: Recurrent Neural Network with LSTM
 
 The code for the recurrent neural net baseline is contained in the
-`baseline_simple_nn/` sub-directory.
+`baseline_simple_nn/` sub-directory. It can be run as follows:
+
+``` shell
+bsub -B -N -n 4 -R "rusage[mem=16000,ngpus_excl_p=1]" python3 simple_rnn.py
+```
 
 ## Our Model
 
@@ -101,3 +98,11 @@ The code for our own model is contained in the `our_model/`
 sub-directory. Our approach combines a recurrent neural network with
 additions and tweaks to make it perform better. We utilize
 TensorFlow's estimator interface.
+
+``` shell
+bsub -B -N -n 4 -R "rusage[mem=16000,ngpus_excl_p=1]" python3 main_v8.py
+```
+
+Our final, best performing model is contained in
+`our_model/main_v8.py`, but code for a couple of variations on this
+model are still available under `our_model/archive/`.
