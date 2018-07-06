@@ -15,8 +15,9 @@ ssh <user>@login.leonhard.ethz.ch
 
 Copy the script at `utils/install_on_leonhard.source` to your home
 dirctory (`scp ./utils/install_on_leonhard.source
-<user>@login.leonhard.ethz.ch`)and source it. Then clone this
-repository.
+<user>@login.leonhard.ethz.ch:install_on_leonhard.source`)and source
+it. Then clone this repository `git clone
+https://github.com/phil9987/cil_2018_text_sentiment.git`.
 
 ## Downloading Data
 
