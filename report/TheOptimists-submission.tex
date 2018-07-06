@@ -238,7 +238,7 @@ doing so. For example, even though it would seem that a sophisticated
 model like the RNN used in \autoref{subsec:b2} and \autoref{subsec:our-model}
 should benefit from more information (word order, context) this is only true
 in practice assuming sufficiently large datasets and computational
-resources. \pisch{TODO not fully clear to me; is there a ref. for this reasoning?}.
+resources.
 
 It was our suspicion that weighing words independently had a much
 stronger effect on classification performance than respecting
@@ -266,7 +266,7 @@ feeding them into the RNN. Although detecting negation scopes and even
 simple cases of double negation seemed to work very robustly, the
 resulting model had a bit a lower accuracy than chosen final model presented in
 \autoref{subsec:our-model}: 86.7\%. On the other hand, this result underlines
-the power of the LSTM/GRU cells iniside the RNN, which seem to be able
+the power of the LSTM/GRU cells inside the RNN, which seem to be able
 to keep track of negation scopes automatically.
 
 
